@@ -20,7 +20,9 @@ test.describe("campus-space smoke", () => {
     await expect(page).toHaveURL(/\/login$/);
   });
 
-  test("student logs in, browses rooms and filters seats by power outlet", async ({ page }) => {
+  test("student logs in, browses rooms and reads the floor plan with power coverage", async ({
+    page,
+  }) => {
     await login(page, STUDENT.username, STUDENT.password);
 
     await expect(page).toHaveURL(/\/m1\/rooms$/);
@@ -32,14 +34,28 @@ test.describe("campus-space smoke", () => {
     await lib.click();
     await expect(page).toHaveURL(/\/m1\/rooms\/[^/]+$/);
     await expect(page.getByRole("heading", { level: 1, name: "图书馆三楼自习室" })).toBeVisible();
-    const seats = page.getByRole("list", { name: "座位" }).locator("li");
+
+    // REQ-M1-10: the floor plan draws every seat at its position and every outlet with its reach.
+    const seats = page.locator(".seat-map [data-seat-code]");
+    const outlets = page.locator(".seat-map [data-outlet-code]");
     await expect(seats).toHaveCount(40);
+    await expect(outlets).toHaveCount(3);
+    await expect(page.locator(".seat-map [data-outlet-range]")).toHaveCount(3);
     await expect(page.getByTestId("seat-summary")).toContainText("显示 40 个");
+
+    // Highlighted seats on the map must match the count the API derived from outlet ranges.
+    const summaryText = (await page.getByTestId("seat-summary").textContent()) ?? "";
+    const derived = Number(/覆盖范围内 (\d+) 个/.exec(summaryText)?.[1]);
+    expect(derived).toBeGreaterThan(0);
+    await expect(page.locator('.seat-map [data-seat-code][data-power="true"]')).toHaveCount(
+      derived,
+    );
 
     // antd Segmented hides the radio input; click its visible label inside the group instead.
     await page.getByRole("radiogroup", { name: "座位筛选" }).getByText("靠近插座").click();
-    await expect(seats).toHaveCount(10);
-    await expect(page.getByTestId("seat-summary")).toContainText("显示 10 个");
+    await expect(seats).toHaveCount(derived);
+    await expect(page.getByTestId("seat-summary")).toContainText(`显示 ${derived} 个`);
+    await expect(outlets).toHaveCount(3);
     await expect(seats.first()).toHaveAttribute("data-power", "true");
   });
 
