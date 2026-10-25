@@ -26,3 +26,9 @@
 - 单元层的变异得分与"测试能失败"的要求一致；适配层（控制器、仓储）由集成测试与破坏实验 2 覆盖。
 - 待办（TASK-060）：auth 包补 `bearerToken` 的空白与大小写边界测试；platform、m2、m3 在业务逻辑落地后纳入 `pnpm mutation`。
 - 工具说明：Stryker 在 Vitest 5 下不能激活变异体（全部存活、每个变异体 0 个测试），已把 Vitest 固定在 4.x（`pnpm-workspace.yaml` catalog）。
+
+## 2026-10-25 · TASK-017 座位平面图（MR 1）
+
+| # | 破坏 | 预期 | 结果 |
+|---|---|---|---|
+| 3 | `apps/m1-seat/src/rooms/seat-power.ts` 中覆盖判定由 `<=` 改为 `<`（边界座位不再算覆盖） | 单元与集成测试都失败 | 单元 6 条失败（边界、range=1 相邻桌、推导与筛选），集成 2 条失败（`returns seats with positions, derived power`、`applies hasPower=true`）；恢复后 27 单元 + 9 集成全部通过 |

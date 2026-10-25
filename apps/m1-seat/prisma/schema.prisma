@@ -12,9 +12,10 @@ datasource db {
 }
 
 /// Study room (D-2 master data). departmentId null = open to the whole campus (REQ-M1-02).
+/// width/height are the floor-plan size in abstract grid units (REQ-M1-10).
 model Room {
-  id           String   @id @default(cuid())
-  code         String   @unique
+  id           String        @id @default(cuid())
+  code         String        @unique
   name         String
   building     String
   floor        Int
@@ -22,20 +23,27 @@ model Room {
   openFrom     String
   openTo       String
   departmentId String?
-  isActive     Boolean  @default(true)
-  createdAt    DateTime @default(now())
-  updatedAt    DateTime @updatedAt
+  isActive     Boolean       @default(true)
+  width        Int           @default(12)
+  height       Int           @default(8)
+  createdAt    DateTime      @default(now())
+  updatedAt    DateTime      @updatedAt
   seats        Seat[]
+  outlets      PowerOutlet[]
 
   @@index([building])
   @@map("rooms")
 }
 
-/// Registered seat with a unique code inside its room (REQ-M1-09 power outlet flag).
+/// Registered seat with a unique code inside its room and a position on the floor plan.
 model Seat {
   id             String       @id @default(cuid())
   roomId         String
   code           String
+  x              Int          @default(0)
+  y              Int          @default(0)
+  /// Deprecated since REQ-M1-10: derived from power_outlets at read time. Kept for one
+  /// release so the previous image can still run against this schema (expand/contract).
   hasPowerOutlet Boolean      @default(false)
   isActive       Boolean      @default(true)
   createdAt      DateTime     @default(now())
@@ -44,6 +52,28 @@ model Seat {
 
   @@unique([roomId, code])
   @@map("seats")
+}
+
+enum PowerOutletKind {
+  FIXED
+  RAIL
+}
+
+/// A power outlet on the floor plan; seats within `range` grid units of it count as powered
+/// (REQ-M1-09 as derived by REQ-M1-10).
+model PowerOutlet {
+  id        String          @id @default(cuid())
+  roomId    String
+  code      String
+  kind      PowerOutletKind @default(FIXED)
+  x         Int
+  y         Int
+  range     Int             @default(1)
+  createdAt DateTime        @default(now())
+  room      Room            @relation(fields: [roomId], references: [id], onDelete: Cascade)
+
+  @@unique([roomId, code])
+  @@map("power_outlets")
 }
 
 /// Mirrors SeatStatusSource in @campus/contracts. Every status row records who wrote it (X-3).

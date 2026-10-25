@@ -1,10 +1,10 @@
-import type { RoomDto, RoomQuery, SeatDto } from "@campus/contracts";
+import type { PowerOutletDto, RoomDto, RoomQuery, SeatDto } from "@campus/contracts";
 import { Injectable } from "@nestjs/common";
 import type { Prisma } from "../../generated/prisma";
 import { PrismaService } from "../prisma/prisma.service";
 import type { RoomVisibility } from "./room-visibility";
 
-/** Data access for rooms and seats. Returns contract DTOs, never Prisma rows. */
+/** Data access for rooms, seats and outlets. Returns contract DTOs, never Prisma rows. */
 @Injectable()
 export class RoomsRepository {
   constructor(private readonly prisma: PrismaService) {}
@@ -41,21 +41,36 @@ export class RoomsRepository {
     return row ? toRoomDto(row) : null;
   }
 
-  async findSeats(roomId: string, hasPower?: boolean): Promise<SeatDto[]> {
+  /** Active seats with their floor-plan position. hasPowerOutlet is derived by the service. */
+  async findSeats(roomId: string): Promise<SeatDto[]> {
     const rows = await this.prisma.seat.findMany({
-      where: {
-        roomId,
-        isActive: true,
-        ...(hasPower === undefined ? {} : { hasPowerOutlet: hasPower }),
-      },
+      where: { roomId, isActive: true },
       orderBy: { code: "asc" },
     });
     return rows.map((s) => ({
       id: s.id,
       roomId: s.roomId,
       code: s.code,
-      hasPowerOutlet: s.hasPowerOutlet,
+      x: s.x,
+      y: s.y,
+      hasPowerOutlet: false,
       isActive: s.isActive,
+    }));
+  }
+
+  async findOutlets(roomId: string): Promise<PowerOutletDto[]> {
+    const rows = await this.prisma.powerOutlet.findMany({
+      where: { roomId },
+      orderBy: { code: "asc" },
+    });
+    return rows.map((o) => ({
+      id: o.id,
+      roomId: o.roomId,
+      code: o.code,
+      kind: o.kind,
+      x: o.x,
+      y: o.y,
+      range: o.range,
     }));
   }
 }
@@ -70,6 +85,8 @@ interface RoomRow {
   openTo: string;
   departmentId: string | null;
   isActive: boolean;
+  width: number;
+  height: number;
   _count: { seats: number };
 }
 
@@ -85,5 +102,7 @@ function toRoomDto(row: RoomRow): RoomDto {
     departmentId: row.departmentId,
     isActive: row.isActive,
     seatCount: row._count.seats,
+    width: row.width,
+    height: row.height,
   };
 }

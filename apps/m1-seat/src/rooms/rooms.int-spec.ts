@@ -32,6 +32,7 @@ beforeAll(async () => {
   await app.init();
   const prisma = app.get(PrismaService);
 
+  // Seat 01 sits one unit from the wall socket W1 (covered); seat 02 is far from every outlet.
   const lib = await prisma.room.create({
     data: {
       code: "LIB-301",
@@ -41,13 +42,16 @@ beforeAll(async () => {
       openFrom: "07:00",
       openTo: "22:30",
       departmentId: null,
+      width: 18,
+      height: 12,
       seats: {
         create: [
-          { code: "01", hasPowerOutlet: true },
-          { code: "02", hasPowerOutlet: false },
-          { code: "03", hasPowerOutlet: false, isActive: false },
+          { code: "01", x: 2, y: 2 },
+          { code: "02", x: 10, y: 2 },
+          { code: "03", x: 12, y: 2, isActive: false },
         ],
       },
+      outlets: { create: [{ code: "W1", kind: "FIXED", x: 1, y: 2, range: 1 }] },
     },
   });
   const cs = await prisma.room.create({
@@ -59,7 +63,7 @@ beforeAll(async () => {
       openFrom: "08:00",
       openTo: "21:30",
       departmentId: "CS",
-      seats: { create: [{ code: "01", hasPowerOutlet: true }] },
+      seats: { create: [{ code: "01", x: 2, y: 2 }] },
     },
   });
   await prisma.room.create({
@@ -98,6 +102,8 @@ describe("GET /api/m1/rooms", () => {
     ]);
     const lib = res.body.data.find((r: { code: string }) => r.code === "LIB-301");
     expect(lib.seatCount).toBe(2);
+    expect(lib.width).toBe(18);
+    expect(lib.height).toBe(12);
   });
 
   it("hides the CS room from an EE student", async () => {
@@ -124,19 +130,37 @@ describe("GET /api/m1/rooms", () => {
 });
 
 describe("GET /api/m1/rooms/:id/seats", () => {
-  it("lists active seats and applies hasPower", async () => {
-    const all = await request(app.getHttpServer())
+  it("returns seats with positions, derived power and the room's outlets", async () => {
+    const res = await request(app.getHttpServer())
       .get(`/api/m1/rooms/${libRoomId}/seats`)
       .set("authorization", `Bearer ${token([Role.STUDENT], null)}`)
       .expect(200);
-    expect(all.body.data.room.code).toBe("LIB-301");
-    expect(all.body.data.seats.map((s: { code: string }) => s.code)).toEqual(["01", "02"]);
+    expect(res.body.data.room.code).toBe("LIB-301");
+    expect(res.body.data.seats).toEqual([
+      expect.objectContaining({ code: "01", x: 2, y: 2, hasPowerOutlet: true }),
+      expect.objectContaining({ code: "02", x: 10, y: 2, hasPowerOutlet: false }),
+    ]);
+    expect(res.body.data.outlets).toEqual([
+      expect.objectContaining({ code: "W1", kind: "FIXED", x: 1, y: 2, range: 1 }),
+    ]);
+  });
 
-    const powered = await request(app.getHttpServer())
+  it("applies hasPower=true to the seats but keeps the full outlet list", async () => {
+    const res = await request(app.getHttpServer())
       .get(`/api/m1/rooms/${libRoomId}/seats?hasPower=true`)
       .set("authorization", `Bearer ${token([Role.STUDENT], null)}`)
       .expect(200);
-    expect(powered.body.data.seats.map((s: { code: string }) => s.code)).toEqual(["01"]);
+    expect(res.body.data.seats.map((s: { code: string }) => s.code)).toEqual(["01"]);
+    expect(res.body.data.outlets).toHaveLength(1);
+  });
+
+  it("returns an empty outlet list and no powered seats for a room without outlets", async () => {
+    const res = await request(app.getHttpServer())
+      .get(`/api/m1/rooms/${csRoomId}/seats`)
+      .set("authorization", `Bearer ${token([Role.STUDENT], "CS")}`)
+      .expect(200);
+    expect(res.body.data.outlets).toEqual([]);
+    expect(res.body.data.seats[0].hasPowerOutlet).toBe(false);
   });
 
   it("rejects an invalid hasPower value with VALIDATION_FAILED", async () => {

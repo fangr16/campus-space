@@ -41,5 +41,6 @@ Related: REQ-xx / TASK-xx / 其他 ADR
 | ADR-0004 | [托管与流水线：只用 CodeArts](implemented/2026-10-25-hosting-and-pipeline.md) | implemented |
 | ADR-0005 | [测试有效性：80% 覆盖 + 变异测试](implemented/2026-10-25-test-effectiveness.md) | implemented |
 | ADR-0006 | [分支与合并策略](implemented/2026-10-25-branching-and-merging.md) | implemented |
+| ADR-0007 | [座位平面图与插座覆盖范围的数据模型](implemented/2026-10-25-seat-layout-model.md) | implemented |
 
 > ADR-0002 到 0006 是组长在搭建 base repo 时做的启动决策，已随仓库落地，因此直接记为 implemented。任何组员可以提出新的 ADR 取代它们。
