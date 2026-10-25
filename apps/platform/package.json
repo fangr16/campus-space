@@ -1,0 +1,52 @@
+{
+  "name": "@campus/platform",
+  "version": "0.1.0",
+  "private": true,
+  "description": "Shared layer D: login and identity, users and roles, notifications, audit.",
+  "type": "commonjs",
+  "scripts": {
+    "generate": "prisma generate",
+    "build": "nest build",
+    "typecheck": "tsc -p tsconfig.json --noEmit",
+    "dev": "node ../../scripts/with-env.mjs nest start --watch",
+    "start": "node dist/main.js",
+    "test": "vitest run --coverage",
+    "test:integration": "node ../../scripts/with-env.mjs vitest run --config vitest.integration.config.mts",
+    "mutation": "stryker run",
+    "db:migrate": "node ../../scripts/with-env.mjs prisma migrate deploy",
+    "db:migrate:dev": "node ../../scripts/with-env.mjs prisma migrate dev",
+    "db:seed": "node ../../scripts/with-env.mjs tsx prisma/seed.ts"
+  },
+  "dependencies": {
+    "@campus/auth": "workspace:*",
+    "@campus/contracts": "workspace:*",
+    "@campus/nest-common": "workspace:*",
+    "@nestjs/common": "catalog:",
+    "@nestjs/core": "catalog:",
+    "@nestjs/jwt": "catalog:",
+    "@nestjs/platform-express": "catalog:",
+    "@nestjs/swagger": "catalog:",
+    "@prisma/client": "catalog:",
+    "bcryptjs": "catalog:",
+    "reflect-metadata": "catalog:",
+    "rxjs": "catalog:",
+    "zod": "catalog:"
+  },
+  "devDependencies": {
+    "@nestjs/cli": "catalog:",
+    "@nestjs/testing": "catalog:",
+    "@stryker-mutator/core": "catalog:",
+    "@stryker-mutator/vitest-runner": "catalog:",
+    "@swc/core": "catalog:",
+    "@types/bcryptjs": "catalog:",
+    "@types/node": "catalog:",
+    "@types/supertest": "catalog:",
+    "@vitest/coverage-v8": "catalog:",
+    "prisma": "catalog:",
+    "supertest": "catalog:",
+    "tsx": "catalog:",
+    "typescript": "catalog:",
+    "unplugin-swc": "catalog:",
+    "vitest": "catalog:"
+  }
+}

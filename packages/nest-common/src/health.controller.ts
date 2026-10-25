@@ -1,6 +1,6 @@
 import { Controller, Get, Inject, ServiceUnavailableException } from "@nestjs/common";
 import { Public } from "./public.decorator";
-import { SERVICE_INFO, type ServiceInfo } from "./service-info";
+import { HEALTH_CHECKS, type HealthCheck, SERVICE_INFO, type ServiceInfo } from "./service-info";
 
 export interface HealthReport {
   status: "ok";
@@ -15,12 +15,15 @@ export interface HealthReport {
  */
 @Controller()
 export class HealthController {
-  constructor(@Inject(SERVICE_INFO) private readonly info: ServiceInfo) {}
+  constructor(
+    @Inject(SERVICE_INFO) private readonly info: ServiceInfo,
+    @Inject(HEALTH_CHECKS) private readonly checks: ReadonlyArray<HealthCheck>,
+  ) {}
 
   @Public()
   @Get("health")
   async health(): Promise<HealthReport> {
-    const results = await Promise.allSettled(this.info.healthChecks.map((check) => check()));
+    const results = await Promise.allSettled(this.checks.map((check) => check()));
     const failed = results.filter((r) => r.status === "rejected");
     if (failed.length > 0) {
       throw new ServiceUnavailableException(`${failed.length} health check(s) failed`);

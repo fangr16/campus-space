@@ -55,7 +55,7 @@ export function sharedVitestConfig(options = {}) {
           "src/main.ts",
           "src/**/index.ts",
           "src/**/*.module.ts",
-          "src/generated/**",
+          "generated/**",
           "src/**/*.d.ts",
         ],
         thresholds: { lines: 80, branches: 80 },

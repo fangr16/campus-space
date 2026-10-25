@@ -16,7 +16,7 @@ apps/*/openapi.json
 .stryker-tmp/
 playwright-report/
 test-results/
-apps/*/src/generated/
+apps/*/generated/
 
 # env and secrets
 .env

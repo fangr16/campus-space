@@ -1,13 +1,15 @@
 import type { VersionInfo } from "@campus/contracts";
 
 export const SERVICE_INFO = Symbol("SERVICE_INFO");
+export const HEALTH_CHECKS = Symbol("HEALTH_CHECKS");
 
 export interface ServiceInfo {
   /** Short service name, also the URL prefix segment: api/<name>. */
   name: string;
-  /** Optional async checks run by /health; each throws when unhealthy. */
-  healthChecks: ReadonlyArray<() => Promise<void>>;
 }
+
+/** Each check resolves when healthy and throws otherwise (for example a database ping). */
+export type HealthCheck = () => Promise<void>;
 
 export interface BuildEnv {
   GIT_SHA?: string;

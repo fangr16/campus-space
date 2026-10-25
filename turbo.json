@@ -4,18 +4,18 @@
   "globalEnv": ["NODE_ENV", "CI", "VITEST_INTEGRATION"],
   "tasks": {
     "build": {
-      "dependsOn": ["^build"],
+      "dependsOn": ["^build", "generate"],
       "outputs": ["dist/**"]
     },
     "typecheck": {
-      "dependsOn": ["^build"]
+      "dependsOn": ["^build", "generate"]
     },
     "test": {
-      "dependsOn": ["^build"],
+      "dependsOn": ["^build", "generate"],
       "outputs": ["coverage/**"]
     },
     "test:integration": {
-      "dependsOn": ["^build"],
+      "dependsOn": ["^build", "generate"],
       "cache": false,
       "env": ["DATABASE_URL", "JWT_SECRET", "INTERNAL_SERVICE_TOKEN"]
     },
@@ -26,7 +26,8 @@
     },
     "db:migrate": {
       "cache": false,
-      "env": ["DATABASE_URL"]
+      "env": ["DATABASE_URL"],
+      "dependsOn": ["generate"]
     },
     "db:seed": {
       "dependsOn": ["db:migrate"],
@@ -34,9 +35,13 @@
       "env": ["DATABASE_URL"]
     },
     "dev": {
-      "dependsOn": ["^build"],
+      "dependsOn": ["^build", "generate"],
       "cache": false,
       "persistent": true
+    },
+    "generate": {
+      "inputs": ["prisma/schema.prisma"],
+      "outputs": ["generated/**"]
     }
   }
 }

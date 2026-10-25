@@ -34,30 +34,27 @@ describe("buildVersionInfo", () => {
 
 describe("VersionController", () => {
   it("reports the configured service name", () => {
-    const controller = new VersionController({ name: "platform", healthChecks: [] });
+    const controller = new VersionController({ name: "platform" });
     expect(controller.version().service).toBe("platform");
   });
 });
 
 describe("HealthController", () => {
   it("returns ok with the number of checks that ran", async () => {
-    const controller = new HealthController({
-      name: "m1",
-      healthChecks: [async () => undefined, async () => undefined],
-    });
+    const controller = new HealthController({ name: "m1" }, [
+      async () => undefined,
+      async () => undefined,
+    ]);
     await expect(controller.health()).resolves.toEqual({ status: "ok", service: "m1", checks: 2 });
   });
 
   it("throws 503 when any check rejects", async () => {
-    const controller = new HealthController({
-      name: "m1",
-      healthChecks: [
-        async () => undefined,
-        async () => {
-          throw new Error("db down");
-        },
-      ],
-    });
+    const controller = new HealthController({ name: "m1" }, [
+      async () => undefined,
+      async () => {
+        throw new Error("db down");
+      },
+    ]);
     await expect(controller.health()).rejects.toBeInstanceOf(ServiceUnavailableException);
   });
 });
