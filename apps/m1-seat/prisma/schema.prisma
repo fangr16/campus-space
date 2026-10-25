@@ -1,0 +1,77 @@
+// M1 study-seat reservation plus room/seat master data (D-2), schema "m1". Owner: module group 1.
+// Migrations: pnpm --filter @campus/m1-seat db:migrate:dev --name <change>
+
+generator client {
+  provider = "prisma-client-js"
+  output   = "../generated/prisma"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("M1_DATABASE_URL")
+}
+
+/// Study room (D-2 master data). departmentId null = open to the whole campus (REQ-M1-02).
+model Room {
+  id           String   @id @default(cuid())
+  code         String   @unique
+  name         String
+  building     String
+  floor        Int
+  /// Opening hours as "HH:mm" local time; reservations must fall inside (REQ-M1-02).
+  openFrom     String
+  openTo       String
+  departmentId String?
+  isActive     Boolean  @default(true)
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+  seats        Seat[]
+
+  @@index([building])
+  @@map("rooms")
+}
+
+/// Registered seat with a unique code inside its room (REQ-M1-09 power outlet flag).
+model Seat {
+  id             String       @id @default(cuid())
+  roomId         String
+  code           String
+  hasPowerOutlet Boolean      @default(false)
+  isActive       Boolean      @default(true)
+  createdAt      DateTime     @default(now())
+  room           Room         @relation(fields: [roomId], references: [id], onDelete: Cascade)
+  statuses       SeatStatus[]
+
+  @@unique([roomId, code])
+  @@map("seats")
+}
+
+/// Mirrors SeatStatusSource in @campus/contracts. Every status row records who wrote it (X-3).
+enum SeatStatusSource {
+  M1_RESERVATION
+  M2_ROOM_BOOKING
+  M3_REPAIR
+}
+
+enum SeatStatusKind {
+  RESERVED
+  BLOCKED
+}
+
+/// A time window during which a seat is unavailable, with provenance for tracing and audit.
+model SeatStatus {
+  id        String           @id @default(cuid())
+  seatId    String
+  kind      SeatStatusKind
+  source    SeatStatusSource
+  /// Reservation id (M1), booking id (M2) or ticket id (M3) in the source module.
+  refId     String
+  from      DateTime
+  to        DateTime
+  createdAt DateTime         @default(now())
+  seat      Seat             @relation(fields: [seatId], references: [id], onDelete: Cascade)
+
+  @@index([seatId, from, to])
+  @@index([source, refId])
+  @@map("seat_statuses")
+}
