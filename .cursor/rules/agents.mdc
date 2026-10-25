@@ -1,0 +1,8 @@
+---
+description: Project rules. The canonical file is AGENTS.md at the repository root.
+alwaysApply: true
+---
+
+Read and follow `AGENTS.md` at the repository root before any change. It is the single
+source of truth for branching, provenance, review, module boundaries and evidence rules.
+Skills live in `.agents/skills/*/SKILL.md`.
