@@ -1,0 +1,102 @@
+/* Floor plan (REQ-M1-10). All SVG geometry is in grid units, so stroke widths and font sizes
+   are fractions of a unit; the viewBox scales them with the container. */
+
+.seat-map {
+  margin: 0;
+  display: grid;
+  gap: var(--space-3);
+}
+
+.seat-map__svg {
+  width: 100%;
+  height: auto;
+  display: block;
+  background: var(--color-surface);
+  border: 1px solid var(--color-line);
+  border-radius: var(--radius-md);
+  box-shadow: var(--shadow-card);
+  font-family: var(--font-mono);
+}
+
+.seat-map__floor {
+  fill: var(--color-surface-muted);
+}
+
+.seat-map__grid line {
+  stroke: var(--color-line);
+  stroke-width: 0.03;
+}
+
+.seat-map__ranges circle {
+  fill: oklch(72% 0.15 70 / 0.14);
+  stroke: var(--color-power);
+  stroke-width: 0.06;
+  stroke-dasharray: 0.25 0.18;
+}
+
+.seat-map__seat rect {
+  fill: var(--color-surface);
+  stroke: var(--color-ink-soft);
+  stroke-width: 0.06;
+  transition: fill var(--duration-fast) var(--ease-out);
+}
+
+.seat-map__seat[data-power="true"] rect {
+  fill: oklch(96% 0.05 70);
+  stroke: var(--color-power);
+  stroke-width: 0.1;
+}
+
+.seat-map__seat text {
+  font-size: 0.5px;
+  fill: var(--color-ink);
+  text-anchor: middle;
+  dominant-baseline: central;
+  pointer-events: none;
+}
+
+.seat-map__seat:hover rect {
+  fill: var(--color-accent-soft);
+}
+
+.seat-map__outlet circle {
+  fill: var(--color-power);
+  stroke: var(--color-surface);
+  stroke-width: 0.08;
+}
+
+.seat-map__outlet text {
+  font-size: 0.5px;
+  text-anchor: middle;
+  dominant-baseline: central;
+  pointer-events: none;
+}
+
+.seat-map__legend {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--space-4);
+  font-size: var(--text-sm);
+  color: var(--color-ink-soft);
+}
+
+.seat-map__swatch {
+  display: inline-block;
+  width: 0.9em;
+  height: 0.9em;
+  vertical-align: -0.1em;
+  border-radius: 2px;
+  border: 1px solid var(--color-ink-soft);
+  background: var(--color-surface);
+}
+
+.seat-map__swatch[data-kind="powered"] {
+  background: oklch(96% 0.05 70);
+  border-color: var(--color-power);
+}
+
+.seat-map__swatch[data-kind="outlet"] {
+  border-radius: 50%;
+  background: var(--color-power);
+  border-color: var(--color-power);
+}

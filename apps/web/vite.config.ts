@@ -1,3 +1,4 @@
+import { fileURLToPath } from "node:url";
 import react from "@vitejs/plugin-react";
 import { defineConfig } from "vite";
 
@@ -14,12 +15,20 @@ const services: Record<string, number> = {
 
 export default defineConfig({
   plugins: [react()],
-  // Pre-bundle everything up front: the CommonJS workspace package must be converted to ESM
-  // for the dev server, and listing the rest avoids Vite discovering a dependency mid-session,
-  // re-optimizing and reloading the page (which broke the e2e login flow).
+  // The contracts package is compiled from its TypeScript source instead of the CommonJS dist:
+  // the dev server then always sees the current schemas (a pre-bundled copy went stale after
+  // every rebuild) and gets HMR for free. Production builds use the same alias.
+  resolve: {
+    alias: {
+      "@campus/contracts": fileURLToPath(
+        new URL("../../packages/contracts/src/index.ts", import.meta.url),
+      ),
+    },
+  },
+  // Pre-bundle the third-party dependencies up front so Vite never discovers one mid-session,
+  // re-optimizes and reloads the page (which broke the e2e login flow once).
   optimizeDeps: {
     include: [
-      "@campus/contracts",
       "react",
       "react-dom",
       "react-dom/client",

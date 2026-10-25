@@ -9,7 +9,10 @@ services, the same shape nginx serves in deployment.
   `ApiClientError`), `auth-store.ts` (token persistence), unit tested at 80%.
 - `src/features/<module>/` pages, hooks and `*.model.ts` view models per module
   (`auth`, `shell`, `m1`, `m2`, `m3`). View models are pure and unit tested.
-- `src/styles/tokens.css` design tokens; components use tokens, never raw colors.
+- `src/styles/tokens.css` design tokens; components use tokens, never raw colors. Feature
+  styles live next to the component (`seat-map.css`).
+- `@campus/contracts` is aliased to its TypeScript source in `vite.config.ts`; do not import
+  from its `dist`.
 
 ## Rules
 

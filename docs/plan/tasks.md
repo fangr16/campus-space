@@ -38,8 +38,8 @@
 | TASK-043 | platform 登录限流（@nestjs/throttler）与失败日志，替代仅靠 nginx `limit_req` | REQ-D1-01 | 模块组 2 | — | 待领 |
 | TASK-044 | 令牌吊销 / 缩短有效期：用户被禁用或角色变更后立即失效（tokenVersion 或刷新流程） | REQ-D1-02 | 模块组 2 | — | 待领 |
 | TASK-053 | 每个服务使用独立的数据库角色，仅授权自己的 schema | — | 平台 | TASK-050 | 待领 |
-| TASK-017 | 座位平面图数据模型与接口：坐标、插座实体、推导电源、契约、ADR-0007 | REQ-M1-10、REQ-M1-09 | 组长 | — | 评审中 |
-| TASK-018 | 座位平面图前端：SVG 平面图、插座覆盖圈、覆盖座位高亮、e2e | REQ-M1-10 | 模块组 1 | TASK-017 | 待领 |
+| TASK-017 | 座位平面图数据模型与接口：坐标、插座实体、推导电源、契约、ADR-0007 | REQ-M1-10、REQ-M1-09 | 组长 | — | 完成 |
+| TASK-018 | 座位平面图前端：SVG 平面图、插座覆盖圈、覆盖座位高亮、e2e | REQ-M1-10 | 组长 | TASK-017 | 评审中 |
 | TASK-016 | M1 自习室列表分页 | REQ-M1-07 | 模块组 1 | — | 待领 |
 | TASK-045 | 前端令牌改为 httpOnly Cookie，去掉 localStorage | REQ-D1-02 | 平台 | TASK-044 | 待领 |
 | TASK-060 | 每次 Review 前跑 Stryker 并更新 `mutation-log.md` | — | 质量 | — | 待领 |

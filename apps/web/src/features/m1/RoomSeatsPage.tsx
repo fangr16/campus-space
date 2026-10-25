@@ -3,9 +3,14 @@ import { Segmented } from "antd";
 import { useState } from "react";
 import { Link, useParams } from "react-router";
 import { fetchRoomSeats } from "./api";
-import { hasPowerParam, type PowerFilter, sortSeats, summarizeSeats } from "./seat-grid.model";
+import { SeatMap } from "./SeatMap";
+import { hasPowerParam, type PowerFilter, summarizeSeats } from "./seat-grid.model";
 
-/** REQ-M1-09: seats of one room with the power-outlet filter. Reservation comes in REQ-M1-04. */
+/**
+ * REQ-M1-10 floor plan of one room with REQ-M1-09 power filter. Reservation comes in
+ * REQ-M1-04. The filter is applied by the API, so a filtered map only draws the matching
+ * seats while every outlet stays visible.
+ */
 export function RoomSeatsPage() {
   const { id = "" } = useParams();
   const [filter, setFilter] = useState<PowerFilter>("all");
@@ -24,7 +29,7 @@ export function RoomSeatsPage() {
     );
   }
 
-  const { room, seats } = result.data;
+  const { room, seats, outlets } = result.data;
   const summary = summarizeSeats(seats, filter);
 
   return (
@@ -40,7 +45,7 @@ export function RoomSeatsPage() {
           <p className="page__lede">
             {room.building} {room.floor} 层 · 开放 {room.openFrom}–{room.openTo} ·{" "}
             {room.departmentId ? `${room.departmentId} 院系专用` : "全校开放"} · 共 {room.seatCount}{" "}
-            座
+            座 · {outlets.length} 个插座
           </p>
         </div>
         <Segmented<PowerFilter>
@@ -56,25 +61,13 @@ export function RoomSeatsPage() {
 
       <p className="seat-legend" data-testid="seat-summary">
         <span>显示 {summary.shown} 个</span>
-        <span>⚡ 靠近插座 {summary.powered} 个</span>
+        <span>⚡ 覆盖范围内 {summary.powered} 个</span>
       </p>
 
       {seats.length === 0 ? (
         <p className="state">没有符合条件的座位。</p>
       ) : (
-        <ul className="seat-grid" aria-label="座位">
-          {sortSeats(seats).map((seat) => (
-            <li
-              key={seat.id}
-              className="seat"
-              data-power={seat.hasPowerOutlet}
-              data-seat-code={seat.code}
-              aria-label={`座位 ${seat.code}${seat.hasPowerOutlet ? "，靠近插座" : ""}`}
-            >
-              {seat.code}
-            </li>
-          ))}
-        </ul>
+        <SeatMap room={room} seats={seats} outlets={outlets} />
       )}
     </section>
   );
