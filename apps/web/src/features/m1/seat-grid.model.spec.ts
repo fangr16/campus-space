@@ -6,6 +6,8 @@ const seat = (code: string, hasPowerOutlet: boolean): SeatDto => ({
   id: code,
   roomId: "r",
   code,
+  x: 0,
+  y: 0,
   hasPowerOutlet,
   isActive: true,
 });

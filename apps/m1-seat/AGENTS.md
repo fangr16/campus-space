@@ -6,13 +6,15 @@ modules copy: migration → seed → repository → service → controller → u
 
 ## Owns
 
-- `rooms/` room and seat master data, search and visibility (REQ-M1-02, 07, 09).
+- `rooms/` room and seat master data, search, visibility and the floor plan (REQ-M1-02,
+  07, 09, 10). `seat-power.ts` derives power availability from outlets; never store it.
 - Planned: `reservations/` (REQ-M1-04, 05, 06), `seat-status/` internal endpoints that M2
   and M3 call to block and release seats (X-1, X-2).
 
 ## Tables
 
-`rooms`, `seats`, `seat_statuses`. `seat_statuses.source` is mandatory and mirrors
+`rooms`, `seats`, `power_outlets`, `seat_statuses`. `seats.hasPowerOutlet` is deprecated
+(derived at read time) and is dropped in the release after ADR-0007. `seat_statuses.source` is mandatory and mirrors
 `SeatStatusSource` in contracts (X-3). Never write a status row without `source` and `refId`.
 
 ## Conventions

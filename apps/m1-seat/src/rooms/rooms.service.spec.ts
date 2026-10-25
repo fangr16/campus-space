@@ -1,4 +1,4 @@
-import { type JwtPayload, Role, type RoomDto } from "@campus/contracts";
+import { type JwtPayload, type PowerOutletDto, Role, type RoomDto } from "@campus/contracts";
 import { NotFoundException } from "@nestjs/common";
 import { describe, expect, it, vi } from "vitest";
 import type { RoomsRepository } from "./rooms.repository";
@@ -23,18 +23,23 @@ const csRoom: RoomDto = {
   departmentId: "CS",
   isActive: true,
   seatCount: 2,
+  width: 12,
+  height: 8,
 };
+
+const outlets: PowerOutletDto[] = [
+  { id: "o1", roomId: "r-cs", code: "W1", kind: "FIXED", x: 1, y: 2, range: 1 },
+];
 
 function serviceWith(rooms: RoomDto[]) {
   const repo = {
     findRooms: vi.fn(async () => rooms),
     findRoomById: vi.fn(async (id: string) => rooms.find((r) => r.id === id) ?? null),
-    findSeats: vi.fn(async (roomId: string, hasPower?: boolean) =>
-      [
-        { id: "a", roomId, code: "01", hasPowerOutlet: true, isActive: true },
-        { id: "b", roomId, code: "02", hasPowerOutlet: false, isActive: true },
-      ].filter((s) => hasPower === undefined || s.hasPowerOutlet === hasPower),
-    ),
+    findSeats: vi.fn(async (roomId: string) => [
+      { id: "a", roomId, code: "01", x: 2, y: 2, hasPowerOutlet: false, isActive: true },
+      { id: "b", roomId, code: "02", x: 6, y: 2, hasPowerOutlet: false, isActive: true },
+    ]),
+    findOutlets: vi.fn(async () => outlets),
   };
   return { service: new RoomsService(repo as unknown as RoomsRepository), repo };
 }
@@ -51,17 +56,28 @@ describe("RoomsService.listRooms", () => {
 });
 
 describe("RoomsService.listSeats", () => {
-  it("returns the room with its seats, honoring the power filter", async () => {
-    const { service } = serviceWith([csRoom]);
-    const result = await service.listSeats(student, "r-cs", { hasPower: true });
-    expect(result.room.code).toBe("CS-304");
-    expect(result.seats.map((s) => s.code)).toEqual(["01"]);
-  });
-
-  it("returns every active seat when no filter is given", async () => {
+  it("derives power from outlets and returns every outlet alongside the seats", async () => {
     const { service } = serviceWith([csRoom]);
     const result = await service.listSeats(student, "r-cs", {});
-    expect(result.seats).toHaveLength(2);
+    expect(result.room.code).toBe("CS-304");
+    expect(result.seats.map((s) => [s.code, s.hasPowerOutlet])).toEqual([
+      ["01", true],
+      ["02", false],
+    ]);
+    expect(result.outlets).toEqual(outlets);
+  });
+
+  it("keeps only powered seats under hasPower=true but still lists all outlets", async () => {
+    const { service } = serviceWith([csRoom]);
+    const result = await service.listSeats(student, "r-cs", { hasPower: true });
+    expect(result.seats.map((s) => s.code)).toEqual(["01"]);
+    expect(result.outlets).toHaveLength(1);
+  });
+
+  it("keeps only unpowered seats under hasPower=false", async () => {
+    const { service } = serviceWith([csRoom]);
+    const result = await service.listSeats(student, "r-cs", { hasPower: false });
+    expect(result.seats.map((s) => s.code)).toEqual(["02"]);
   });
 
   it("reports an unknown room as not found", async () => {
