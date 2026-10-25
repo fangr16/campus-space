@@ -14,6 +14,9 @@ const services: Record<string, number> = {
 
 export default defineConfig({
   plugins: [react()],
+  // Workspace packages are CommonJS builds linked by pnpm; pre-bundling converts them to ESM
+  // for the dev server (the production build already does this through Rollup).
+  optimizeDeps: { include: ["@campus/contracts"] },
   server: {
     port: Number(process.env.WEB_PORT ?? 5180),
     proxy: Object.fromEntries(

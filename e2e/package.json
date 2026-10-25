@@ -1,0 +1,18 @@
+{
+  "name": "@campus/e2e",
+  "version": "0.1.0",
+  "private": true,
+  "description": "Playwright smoke against the running stack: login, rooms, seats, placeholders, version footer.",
+  "type": "module",
+  "scripts": {
+    "e2e": "node ../scripts/with-env.mjs playwright test",
+    "e2e:headed": "node ../scripts/with-env.mjs playwright test --headed",
+    "report": "playwright show-report",
+    "install-browsers": "playwright install chromium"
+  },
+  "devDependencies": {
+    "@playwright/test": "catalog:",
+    "@types/node": "catalog:",
+    "typescript": "catalog:"
+  }
+}

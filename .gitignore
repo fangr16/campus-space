@@ -30,3 +30,6 @@ apps/*/generated/
 .DS_Store
 Thumbs.db
 *.log
+
+# stryker vitest runner scratch files
+stryker-setup-*.js
