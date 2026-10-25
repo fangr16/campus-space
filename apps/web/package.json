@@ -1,0 +1,35 @@
+{
+  "name": "@campus/web",
+  "version": "0.1.0",
+  "private": true,
+  "description": "Web front end for students and administrators across M1, M2 and M3.",
+  "type": "module",
+  "scripts": {
+    "dev": "vite --strictPort",
+    "build": "tsc -p tsconfig.json --noEmit && vite build",
+    "typecheck": "tsc -p tsconfig.json --noEmit",
+    "preview": "vite preview",
+    "test": "vitest run --coverage",
+    "test:watch": "vitest"
+  },
+  "dependencies": {
+    "@ant-design/icons": "catalog:",
+    "@campus/contracts": "workspace:*",
+    "@tanstack/react-query": "catalog:",
+    "antd": "catalog:",
+    "dayjs": "catalog:",
+    "react": "catalog:",
+    "react-dom": "catalog:",
+    "react-router": "catalog:",
+    "zod": "catalog:"
+  },
+  "devDependencies": {
+    "@types/react": "catalog:",
+    "@types/react-dom": "catalog:",
+    "@vitejs/plugin-react": "catalog:",
+    "@vitest/coverage-v8": "catalog:",
+    "typescript": "catalog:",
+    "vite": "catalog:",
+    "vitest": "catalog:"
+  }
+}

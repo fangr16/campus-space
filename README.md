@@ -27,7 +27,7 @@ pnpm db:seed        # 幂等种子数据
 pnpm dev            # 启动全部服务与前端
 ```
 
-前端 http://localhost:5173 ，种子账号见 `docs/ops/environments.md`。
+前端 http://localhost:5180 ，种子账号见 `docs/ops/environments.md`。
 
 ## 质量门禁
 
