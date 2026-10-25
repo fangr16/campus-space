@@ -1,0 +1,42 @@
+# CodeArts Build 代码化构建（version 2.0）。在控制台新建“编译构建任务”时选择“使用代码仓库中的 YAML”，
+# 指向本文件。所有逻辑都在 scripts/ci.sh 与 deploy/scripts/build-images.sh 里，这里只是调用。
+# 需要在构建任务的“参数设置”里提供（或由流水线传入）：
+#   REGISTRY        SWR 仓库前缀，如 swr.cn-east-3.myhuaweicloud.com/<org>
+#   SWR_USER / SWR_PASSWORD   SWR 临时登录指令里的用户名与密码（存为私密参数）
+#   IMAGE_TAG       镜像标签；流水线传入 git 短 sha 或发布 tag
+# 官方语法参考：编译构建 › 用户指南 › 参考 › YAML 文件语法配置说明。
+version: 2.0
+
+params:
+  - name: IMAGE_TAG
+    value: ${GIT_COMMIT_SHORT}
+
+env:
+  resource:
+    type: docker
+    arch: X86
+
+steps:
+  PRE_BUILD:
+    - checkout:
+        name: checkout
+        inputs:
+          scm: codehub
+          url: ${REPO_URL}
+          branch: ${BRANCH}
+          lfs: false
+  BUILD:
+    - sh:
+        name: ci
+        image: cloudbuild@nodejs24
+        inputs:
+          command: |
+            export CI=1
+            export IMAGE_TAG="${IMAGE_TAG}"
+            bash scripts/ci.sh
+    - docker:
+        name: build-and-push-images
+        inputs:
+          command: |
+            docker login -u "${SWR_USER}" -p "${SWR_PASSWORD}" "${REGISTRY%%/*}"
+            REGISTRY="${REGISTRY}" IMAGE_TAG="${IMAGE_TAG}" PUSH=1 bash deploy/scripts/build-images.sh

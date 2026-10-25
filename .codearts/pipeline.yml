@@ -1,0 +1,50 @@
+# CodeArts Pipeline YAML 流水线模板（“新建流水线 › 已有 yaml 文件”指向本文件）。
+# 阶段：构建 → 部署测试环境 → 人工审核 → 部署生产环境。jobId 是控制台里对应任务详情页 URL 末尾的
+# 32 位 id，接入时回填（见 docs/ops/codearts-setup.md）。触发设置在控制台勾选“合并请求事件”与
+# “代码提交事件（main）”，并在代码仓分支策略里开启“流水线门禁”。
+env:
+  image_tag: ${COMMIT_ID_SHORT}
+
+jobs:
+  build:
+    name: 构建与测试
+    steps:
+      - name: codearts-build
+        uses: CodeArtsBuild
+        with:
+          jobId: REPLACE_WITH_BUILD_JOB_ID
+          artifactIdentifier: campus-space
+          version: ${{ env.image_tag }}
+
+  deploy_test:
+    name: 部署测试环境
+    needs: [build]
+    steps:
+      - name: deploy-to-test-ecs
+        uses: CodeArtsDeploy
+        with:
+          jobId: REPLACE_WITH_TEST_DEPLOY_JOB_ID
+          version: ${{ env.image_tag }}
+        # 部署任务内容：ssh 到测试 ECS 执行 /opt/campus-space/scripts/deploy.sh ${image_tag}
+
+  approve_prod:
+    name: 生产发布人工审核
+    needs: [deploy_test]
+    steps:
+      - name: manual-review
+        uses: ManualReview # 控制台插件名以“人工审核”插件实际标识为准
+        with:
+          approvers: REPLACE_WITH_LEADER_AND_PLATFORM_OWNER
+          timeoutMinutes: 1440
+
+  deploy_prod:
+    name: 部署生产环境
+    needs: [approve_prod]
+    if: ${{ completed() }}
+    steps:
+      - name: deploy-to-prod-ecs
+        uses: CodeArtsDeploy
+        with:
+          jobId: REPLACE_WITH_PROD_DEPLOY_JOB_ID
+          version: ${{ env.image_tag }}
+        # 生产部署前由组长打 tag：git tag v0.x.y && git push --tags；deploy.sh 记录到 releases.log

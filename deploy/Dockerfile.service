@@ -1,0 +1,37 @@
+# Builds one NestJS service image from the monorepo.
+#   docker build -f deploy/Dockerfile.service --build-arg APP=platform --build-arg PKG=@campus/platform \
+#     --build-arg GIT_SHA=$(git rev-parse HEAD) --build-arg GIT_TAG=$(git describe --tags --always) -t campus-space-platform .
+# Stages: deps (pnpm install) -> build (turbo build incl. prisma generate) -> runtime (pruned prod deps).
+
+ARG NODE_IMAGE=node:24-alpine
+
+FROM ${NODE_IMAGE} AS base
+ENV PNPM_HOME=/pnpm PATH=/pnpm:$PATH CI=1
+RUN corepack enable
+WORKDIR /repo
+
+FROM base AS build
+ARG APP
+ARG PKG
+COPY pnpm-lock.yaml pnpm-workspace.yaml package.json turbo.json tsconfig.base.json vitest.shared.mjs ./
+COPY packages ./packages
+COPY apps/${APP} ./apps/${APP}
+COPY scripts ./scripts
+RUN pnpm install --frozen-lockfile --filter "${PKG}..."
+RUN pnpm turbo run build --filter="${PKG}"
+# Self-contained copy of the app with production dependencies only (workspace packages included as built dist).
+RUN pnpm --filter "${PKG}" deploy --prod --legacy /out
+
+FROM ${NODE_IMAGE} AS runtime
+ARG APP
+ARG GIT_SHA=unknown
+ARG GIT_TAG=untagged
+ARG BUILD_TIME=unknown
+ENV NODE_ENV=production GIT_SHA=${GIT_SHA} GIT_TAG=${GIT_TAG} BUILD_TIME=${BUILD_TIME}
+WORKDIR /app
+RUN addgroup -S app && adduser -S app -G app
+COPY --from=build --chown=app:app /out ./
+USER app
+EXPOSE 3000
+# Migrations run from the same image: node_modules/.bin/prisma migrate deploy (see docker-compose.deploy.yml)
+CMD ["node", "dist/main.js"]

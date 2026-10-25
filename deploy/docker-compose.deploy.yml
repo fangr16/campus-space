@@ -1,0 +1,106 @@
+# Deployment stack for the test and production ECS hosts (same file, different .env).
+# Images come from SWR and are selected by IMAGE_TAG (the git sha or release tag).
+#   REGISTRY=swr.cn-east-3.myhuaweicloud.com/<org>  IMAGE_TAG=v0.1.0  docker compose -f docker-compose.deploy.yml up -d
+# Migrations run as one-shot services before the matching API starts (prisma migrate deploy, idempotent).
+name: campus-space
+
+x-service: &service
+  restart: unless-stopped
+  env_file: .env
+  environment:
+    NODE_ENV: production
+    PORT: "3000"
+  depends_on:
+    db:
+      condition: service_healthy
+  healthcheck:
+    interval: 10s
+    timeout: 3s
+    retries: 10
+  logging:
+    driver: json-file
+    options: { max-size: "10m", max-file: "3" }
+
+x-migrate: &migrate
+  env_file: .env
+  restart: "no"
+  depends_on:
+    db:
+      condition: service_healthy
+  command: ["node_modules/.bin/prisma", "migrate", "deploy"]
+
+services:
+  db:
+    image: postgres:16-alpine
+    restart: unless-stopped
+    environment:
+      POSTGRES_USER: ${POSTGRES_USER:-campus}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:?set POSTGRES_PASSWORD in .env}
+      POSTGRES_DB: ${POSTGRES_DB:-campus}
+    volumes:
+      - pgdata:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER:-campus} -d ${POSTGRES_DB:-campus}"]
+      interval: 5s
+      timeout: 3s
+      retries: 12
+
+  migrate-platform:
+    <<: *migrate
+    image: ${REGISTRY}/campus-space-platform:${IMAGE_TAG}
+  migrate-m1:
+    <<: *migrate
+    image: ${REGISTRY}/campus-space-m1-seat:${IMAGE_TAG}
+  migrate-m2:
+    <<: *migrate
+    image: ${REGISTRY}/campus-space-m2-room:${IMAGE_TAG}
+  migrate-m3:
+    <<: *migrate
+    image: ${REGISTRY}/campus-space-m3-repair:${IMAGE_TAG}
+
+  platform:
+    <<: *service
+    image: ${REGISTRY}/campus-space-platform:${IMAGE_TAG}
+    environment: { NODE_ENV: production, PLATFORM_PORT: "3000" }
+    depends_on:
+      migrate-platform: { condition: service_completed_successfully }
+    healthcheck:
+      test: ["CMD", "wget", "-qO-", "http://127.0.0.1:3000/api/platform/health"]
+  m1-seat:
+    <<: *service
+    image: ${REGISTRY}/campus-space-m1-seat:${IMAGE_TAG}
+    environment: { NODE_ENV: production, M1_PORT: "3000" }
+    depends_on:
+      migrate-m1: { condition: service_completed_successfully }
+    healthcheck:
+      test: ["CMD", "wget", "-qO-", "http://127.0.0.1:3000/api/m1/health"]
+  m2-room:
+    <<: *service
+    image: ${REGISTRY}/campus-space-m2-room:${IMAGE_TAG}
+    environment: { NODE_ENV: production, M2_PORT: "3000" }
+    depends_on:
+      migrate-m2: { condition: service_completed_successfully }
+    healthcheck:
+      test: ["CMD", "wget", "-qO-", "http://127.0.0.1:3000/api/m2/health"]
+  m3-repair:
+    <<: *service
+    image: ${REGISTRY}/campus-space-m3-repair:${IMAGE_TAG}
+    environment: { NODE_ENV: production, M3_PORT: "3000" }
+    depends_on:
+      migrate-m3: { condition: service_completed_successfully }
+    healthcheck:
+      test: ["CMD", "wget", "-qO-", "http://127.0.0.1:3000/api/m3/health"]
+
+  web:
+    image: ${REGISTRY}/campus-space-web:${IMAGE_TAG}
+    restart: unless-stopped
+    ports:
+      - "${HTTP_PORT:-8080}:80"
+    depends_on:
+      - platform
+      - m1-seat
+      - m2-room
+      - m3-repair
+
+volumes:
+  pgdata:
