@@ -48,7 +48,9 @@ PLATFORM_BASE_URL=http://platform:3000
 M1_BASE_URL=http://m1-seat:3000
 M2_BASE_URL=http://m2-room:3000
 M3_BASE_URL=http://m3-repair:3000
-SEED_DEMO_USERS=true
+# Demo accounts: keep false in production. For the test host set true AND a strong SEED_DEMO_PASSWORD.
+SEED_DEMO_USERS=false
+SEED_DEMO_PASSWORD=
 ENV
   echo "wrote ${APP_DIR}/.env template; replace every REPLACE_* value"
 fi

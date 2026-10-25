@@ -132,3 +132,12 @@ describe("createApiClient edge cases", () => {
     expect(fetchImpl).toHaveBeenCalledTimes(1);
   });
 });
+
+describe("createApiClient session handling", () => {
+  it("drops the session on a 401 even when the body is not JSON", async () => {
+    const fetchImpl = async () => new Response("<html>401</html>", { status: 401 });
+    const { client, onUnauthenticated } = clientWith(fetchImpl as typeof fetch);
+    await expect(client.get("/x", Item)).rejects.toMatchObject({ status: 401 });
+    expect(onUnauthenticated).toHaveBeenCalledTimes(1);
+  });
+});

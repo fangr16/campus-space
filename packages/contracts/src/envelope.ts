@@ -11,6 +11,8 @@ export const ErrorCode = {
   NOT_FOUND: "NOT_FOUND",
   CONFLICT: "CONFLICT",
   RATE_LIMITED: "RATE_LIMITED",
+  /** Any other 4xx the server did not classify (405, 413, 415, 422 ...). */
+  CLIENT_ERROR: "CLIENT_ERROR",
   INTERNAL: "INTERNAL",
 } as const;
 export type ErrorCode = (typeof ErrorCode)[keyof typeof ErrorCode];

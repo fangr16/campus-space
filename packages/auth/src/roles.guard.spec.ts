@@ -68,3 +68,61 @@ describe("authOptionsFromEnv", () => {
     ).toEqual({ jwtSecret: "s", internalToken: "t", expiresIn: "8h" });
   });
 });
+
+describe("authOptionsFromEnv in production", () => {
+  const strong = "a".repeat(64);
+  const other = "b".repeat(64);
+
+  it("accepts long distinct secrets", () => {
+    expect(
+      authOptionsFromEnv({
+        NODE_ENV: "production",
+        JWT_SECRET: strong,
+        INTERNAL_SERVICE_TOKEN: other,
+      }).jwtSecret,
+    ).toBe(strong);
+  });
+
+  it("rejects short secrets", () => {
+    expect(() =>
+      authOptionsFromEnv({
+        NODE_ENV: "production",
+        JWT_SECRET: "short",
+        INTERNAL_SERVICE_TOKEN: other,
+      }),
+    ).toThrow("at least 32 characters");
+  });
+
+  it("rejects placeholder values from the templates", () => {
+    expect(() =>
+      authOptionsFromEnv({
+        NODE_ENV: "production",
+        JWT_SECRET: "REPLACE_WITH_openssl_rand_hex_32_xxxxxxxxxxxxxxxx",
+        INTERNAL_SERVICE_TOKEN: other,
+      }),
+    ).toThrow("placeholder");
+    expect(() =>
+      authOptionsFromEnv({
+        NODE_ENV: "production",
+        JWT_SECRET: strong,
+        INTERNAL_SERVICE_TOKEN: "dev-only-internal-token-xxxxxxxxxxxxxxxxxxxxxx",
+      }),
+    ).toThrow("placeholder");
+  });
+
+  it("rejects identical JWT and internal secrets", () => {
+    expect(() =>
+      authOptionsFromEnv({
+        NODE_ENV: "production",
+        JWT_SECRET: strong,
+        INTERNAL_SERVICE_TOKEN: strong,
+      }),
+    ).toThrow("must differ");
+  });
+
+  it("does not apply the production rules in development", () => {
+    expect(authOptionsFromEnv({ JWT_SECRET: "x", INTERNAL_SERVICE_TOKEN: "x" }).jwtSecret).toBe(
+      "x",
+    );
+  });
+});

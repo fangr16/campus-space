@@ -14,9 +14,24 @@ const services: Record<string, number> = {
 
 export default defineConfig({
   plugins: [react()],
-  // Workspace packages are CommonJS builds linked by pnpm; pre-bundling converts them to ESM
-  // for the dev server (the production build already does this through Rollup).
-  optimizeDeps: { include: ["@campus/contracts"] },
+  // Pre-bundle everything up front: the CommonJS workspace package must be converted to ESM
+  // for the dev server, and listing the rest avoids Vite discovering a dependency mid-session,
+  // re-optimizing and reloading the page (which broke the e2e login flow).
+  optimizeDeps: {
+    include: [
+      "@campus/contracts",
+      "react",
+      "react-dom",
+      "react-dom/client",
+      "react-router",
+      "@tanstack/react-query",
+      "antd",
+      "antd/locale/zh_CN",
+      "@ant-design/icons",
+      "dayjs",
+      "zod",
+    ],
+  },
   server: {
     port: Number(process.env.WEB_PORT ?? 5180),
     proxy: Object.fromEntries(

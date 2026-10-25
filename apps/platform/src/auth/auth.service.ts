@@ -5,10 +5,16 @@ import {
   type LoginRequest,
   type LoginResponse,
 } from "@campus/contracts";
-import { Inject, Injectable, UnauthorizedException } from "@nestjs/common";
+import { Inject, Injectable, Logger, UnauthorizedException } from "@nestjs/common";
 import { JwtService } from "@nestjs/jwt";
-import { compare } from "bcryptjs";
+import { compare, hashSync } from "bcryptjs";
 import { type UserRecord, UsersRepository } from "../users/users.repository";
+
+/**
+ * Hash compared against when the username does not exist, so that a failed login costs the
+ * same time whether or not the account exists (no user enumeration by timing).
+ */
+const DUMMY_HASH = hashSync(`no-such-user-${Date.now()}`, 10);
 
 /**
  * Issues access tokens. The same generic message is returned for an unknown user, a wrong
@@ -16,6 +22,8 @@ import { type UserRecord, UsersRepository } from "../users/users.repository";
  */
 @Injectable()
 export class AuthService {
+  private readonly logger = new Logger(AuthService.name);
+
   constructor(
     private readonly users: UsersRepository,
     private readonly jwt: JwtService,
@@ -24,8 +32,9 @@ export class AuthService {
 
   async login(request: LoginRequest): Promise<LoginResponse> {
     const user = await this.users.findByUsername(request.username);
-    const passwordOk = user ? await compare(request.password, user.passwordHash) : false;
+    const passwordOk = await compare(request.password, user?.passwordHash ?? DUMMY_HASH);
     if (!user || !passwordOk || !user.isActive) {
+      this.logger.warn(`login failed for username=${request.username}`);
       throw new UnauthorizedException("invalid username or password");
     }
     const payload = toJwtPayload(user);

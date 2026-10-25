@@ -77,12 +77,18 @@ async function main(): Promise<void> {
     }
   }
 
-  if (process.env.SEED_DEMO_USERS === "false") {
-    console.info("seed: demo users skipped (SEED_DEMO_USERS=false)");
+  // Demo accounts are opt-in. Production additionally needs an explicit password so the
+  // well-known development password can never end up on a public host.
+  if (process.env.SEED_DEMO_USERS !== "true") {
+    console.info("seed: demo users skipped (set SEED_DEMO_USERS=true to create them)");
     return;
   }
-  const password = process.env.SEED_DEMO_PASSWORD ?? "Campus@2026";
-  const passwordHash = await hash(password, 10);
+  const password = process.env.SEED_DEMO_PASSWORD?.trim() || undefined;
+  if (process.env.NODE_ENV === "production" && !password) {
+    throw new Error("SEED_DEMO_USERS=true in production requires SEED_DEMO_PASSWORD");
+  }
+  const effectivePassword = password ?? "Campus@2026";
+  const passwordHash = await hash(effectivePassword, 10);
   for (const demo of DEMO_USERS) {
     const user = await prisma.user.upsert({
       where: { username: demo.username },

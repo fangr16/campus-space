@@ -3,5 +3,8 @@ proxy_set_header Host $host;
 proxy_set_header X-Real-IP $remote_addr;
 proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
 proxy_set_header X-Forwarded-Proto $scheme;
+# The internal service token is for service-to-service calls on the compose network only;
+# never let a browser smuggle it through the public entry point.
+proxy_set_header x-internal-token "";
 proxy_read_timeout 30s;
 proxy_connect_timeout 5s;

@@ -31,4 +31,4 @@ bash scripts/rollback.sh v0.0.9                            # 或指定 tag
 
 | 日期 | 环境 | 版本 | 包含 | 迁移 | 操作人 / 审核人 | 结果 |
 |---|---|---|---|---|---|---|
-| 2026-10-25 | 本机 compose | base repo（11 commits） | 仓库骨架、M1 只读切片、登录 | `platform` / `m1` / `m2` / `m3` 各 `init` | 组长 | 本机 e2e 通过 |
+| 2026-10-25 | 本机 | base repo（12 commits） | 仓库骨架、M1 只读切片、登录 | `platform` / `m1` / `m2` / `m3` 各 `init` | 组长 | 本机 e2e 通过 |

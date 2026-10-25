@@ -37,7 +37,8 @@ export function mapException(exception: unknown): MappedError {
   }
   if (exception instanceof HttpException) {
     const status = exception.getStatus();
-    const code = STATUS_TO_CODE[status] ?? ErrorCode.INTERNAL;
+    const code =
+      STATUS_TO_CODE[status] ?? (status < 500 ? ErrorCode.CLIENT_ERROR : ErrorCode.INTERNAL);
     const response = exception.getResponse();
     const message =
       typeof response === "string"

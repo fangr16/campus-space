@@ -35,6 +35,11 @@
 | TASK-050 | CodeArts Build 任务绑定 `build.yml`，测试环境自动部署 | — | 平台 | TASK-001、004 | 待领 |
 | TASK-051 | 生产环境人工审核 + tag + 回滚演练 | — | 平台 | TASK-050 | 待领 |
 | TASK-052 | 部署窗口与流水线并发锁 | — | 平台 | TASK-050 | 待领 |
+| TASK-043 | platform 登录限流（@nestjs/throttler）与失败日志，替代仅靠 nginx `limit_req` | REQ-D1-01 | 模块组 2 | — | 待领 |
+| TASK-044 | 令牌吊销 / 缩短有效期：用户被禁用或角色变更后立即失效（tokenVersion 或刷新流程） | REQ-D1-02 | 模块组 2 | — | 待领 |
+| TASK-053 | 每个服务使用独立的数据库角色，仅授权自己的 schema | — | 平台 | TASK-050 | 待领 |
+| TASK-016 | M1 自习室列表分页 | REQ-M1-07 | 模块组 1 | — | 待领 |
+| TASK-045 | 前端令牌改为 httpOnly Cookie，去掉 localStorage | REQ-D1-02 | 平台 | TASK-044 | 待领 |
 | TASK-060 | 每次 Review 前跑 Stryker 并更新 `mutation-log.md` | — | 质量 | — | 待领 |
 | TASK-061 | 空库一键重放演练并记录 | — | 质量 | TASK-050 | 待领 |
 | TASK-070 | 第一次 Review 材料 | — | 组长 | — | 待领 |

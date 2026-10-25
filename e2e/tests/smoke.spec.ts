@@ -1,6 +1,6 @@
 import { expect, type Page, test } from "@playwright/test";
 
-const STUDENT = { username: "student", password: process.env.SEED_DEMO_PASSWORD ?? "Campus@2026" };
+const STUDENT = { username: "student", password: process.env.SEED_DEMO_PASSWORD || "Campus@2026" };
 
 // Ant Design inserts a space between two-character CJK button labels ("进 入"), so match loosely.
 const ENTER_BUTTON = /进\s*入/;

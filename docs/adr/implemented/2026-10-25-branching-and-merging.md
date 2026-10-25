@@ -17,7 +17,7 @@ Related: 任务书 §三"版本管理"；Lab1 分析报告问题 3
 - **评审人数**：普通 1 人；schema / contracts / 跨模块 / `packages/*` 为 2 人，且至少 1 人来自受影响模块。
 - **提交信息**：Conventional Commits，scope 受 commitlint 白名单约束。
 - **标签**：每次生产发布打 `v0.x.y`，与 `/version` 返回的 SHA 对应。
-- **Bootstrap 例外**：仓库初始化阶段（本 ADR 所在的前 11 条提交，2026-10-25 至 2026-10-26）由组长直接提交到 `main`，以便在推送到 CodeArts 前形成可运行骨架；推送后立即开启保护分支，此后无例外。
+- **Bootstrap 例外**：仓库初始化阶段（2026-10-25 当天的 bootstrap 提交，含评审修复）由组长直接提交到 `main`，以便在推送到 CodeArts 前形成可运行骨架；推送后立即开启保护分支，此后无例外。
 
 ## 备选方案
 

@@ -41,7 +41,7 @@ pnpm dev                      # 四个服务 + Vite(5180)
 | manager | Campus@2026 | room_manager, approver | CS |
 | maintainer | Campus@2026 | maintainer | — |
 
-密码由 `SEED_DEMO_PASSWORD` 覆盖。
+演示账号是**可选项**：只有 `SEED_DEMO_USERS=true` 才创建（`.env.example` 默认开启，部署模板默认关闭）；生产环境开启时还必须设置 `SEED_DEMO_PASSWORD`，否则种子脚本拒绝运行。密码由 `SEED_DEMO_PASSWORD` 覆盖。
 
 ### 端口
 

@@ -53,9 +53,10 @@ export function createApiClient(options: ApiClientOptions) {
       throw new ApiClientError(ErrorCode.INTERNAL, describe(error, "network error"), 0);
     }
 
+    // A 401 drops the session even when a proxy answered without a JSON body.
+    if (response.status === 401) options.onUnauthenticated?.();
     const envelope = await parseEnvelope(response, schema);
     if (!envelope.success || envelope.error) {
-      if (response.status === 401) options.onUnauthenticated?.();
       const err = envelope.error ?? { code: ErrorCode.INTERNAL, message: "unknown error" };
       throw new ApiClientError(err.code, err.message, response.status, err.details);
     }

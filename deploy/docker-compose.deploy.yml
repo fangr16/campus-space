@@ -1,33 +1,26 @@
 # Deployment stack for the test and production ECS hosts (same file, different .env).
 # Images come from SWR and are selected by IMAGE_TAG (the git sha or release tag).
-#   REGISTRY=swr.cn-east-3.myhuaweicloud.com/<org>  IMAGE_TAG=v0.1.0  docker compose -f docker-compose.deploy.yml up -d
-# Migrations run as one-shot services before the matching API starts (prisma migrate deploy, idempotent).
+#   docker compose -f docker-compose.deploy.yml --env-file .env up -d     (deploy.sh does this)
+# Each service receives only the variables it needs (its own schema URL and the shared
+# secrets); the database superuser password never reaches an application container.
+# Migrations and the idempotent seed run as one-shot services before the matching API starts.
 name: campus-space
+
+x-common-env: &common-env
+  NODE_ENV: production
+  JWT_SECRET: ${JWT_SECRET:?set JWT_SECRET in .env}
+  JWT_EXPIRES_IN: ${JWT_EXPIRES_IN:-8h}
+  INTERNAL_SERVICE_TOKEN: ${INTERNAL_SERVICE_TOKEN:?set INTERNAL_SERVICE_TOKEN in .env}
+  PLATFORM_BASE_URL: http://platform:3000
+  M1_BASE_URL: http://m1-seat:3000
+  M2_BASE_URL: http://m2-room:3000
+  M3_BASE_URL: http://m3-repair:3000
 
 x-service: &service
   restart: unless-stopped
-  env_file: .env
-  environment:
-    NODE_ENV: production
-    PORT: "3000"
-  depends_on:
-    db:
-      condition: service_healthy
-  healthcheck:
-    interval: 10s
-    timeout: 3s
-    retries: 10
   logging:
     driver: json-file
     options: { max-size: "10m", max-file: "3" }
-
-x-migrate: &migrate
-  env_file: .env
-  restart: "no"
-  depends_on:
-    db:
-      condition: service_healthy
-  command: ["node_modules/.bin/prisma", "migrate", "deploy"]
 
 services:
   db:
@@ -46,54 +39,104 @@ services:
       retries: 12
 
   migrate-platform:
-    <<: *migrate
     image: ${REGISTRY}/campus-space-platform:${IMAGE_TAG}
+    restart: "no"
+    environment:
+      NODE_ENV: production
+      PLATFORM_DATABASE_URL: ${PLATFORM_DATABASE_URL:?}
+      SEED_DEMO_USERS: ${SEED_DEMO_USERS:-false}
+      SEED_DEMO_PASSWORD: ${SEED_DEMO_PASSWORD:-}
+    depends_on:
+      db: { condition: service_healthy }
+    command: ["sh", "-c", "node_modules/.bin/prisma migrate deploy && node dist/seed.js"]
   migrate-m1:
-    <<: *migrate
     image: ${REGISTRY}/campus-space-m1-seat:${IMAGE_TAG}
+    restart: "no"
+    environment:
+      NODE_ENV: production
+      M1_DATABASE_URL: ${M1_DATABASE_URL:?}
+    depends_on:
+      db: { condition: service_healthy }
+    command: ["sh", "-c", "node_modules/.bin/prisma migrate deploy && node dist/seed.js"]
   migrate-m2:
-    <<: *migrate
     image: ${REGISTRY}/campus-space-m2-room:${IMAGE_TAG}
+    restart: "no"
+    environment:
+      NODE_ENV: production
+      M2_DATABASE_URL: ${M2_DATABASE_URL:?}
+    depends_on:
+      db: { condition: service_healthy }
+    command: ["sh", "-c", "node_modules/.bin/prisma migrate deploy && node dist/seed.js"]
   migrate-m3:
-    <<: *migrate
     image: ${REGISTRY}/campus-space-m3-repair:${IMAGE_TAG}
+    restart: "no"
+    environment:
+      NODE_ENV: production
+      M3_DATABASE_URL: ${M3_DATABASE_URL:?}
+    depends_on:
+      db: { condition: service_healthy }
+    command: ["sh", "-c", "node_modules/.bin/prisma migrate deploy && node dist/seed.js"]
 
   platform:
     <<: *service
     image: ${REGISTRY}/campus-space-platform:${IMAGE_TAG}
-    environment: { NODE_ENV: production, PLATFORM_PORT: "3000" }
+    environment:
+      <<: *common-env
+      PLATFORM_PORT: "3000"
+      PLATFORM_DATABASE_URL: ${PLATFORM_DATABASE_URL:?}
     depends_on:
       migrate-platform: { condition: service_completed_successfully }
     healthcheck:
       test: ["CMD", "wget", "-qO-", "http://127.0.0.1:3000/api/platform/health"]
+      interval: 10s
+      timeout: 3s
+      retries: 10
   m1-seat:
     <<: *service
     image: ${REGISTRY}/campus-space-m1-seat:${IMAGE_TAG}
-    environment: { NODE_ENV: production, M1_PORT: "3000" }
+    environment:
+      <<: *common-env
+      M1_PORT: "3000"
+      M1_DATABASE_URL: ${M1_DATABASE_URL:?}
     depends_on:
       migrate-m1: { condition: service_completed_successfully }
     healthcheck:
       test: ["CMD", "wget", "-qO-", "http://127.0.0.1:3000/api/m1/health"]
+      interval: 10s
+      timeout: 3s
+      retries: 10
   m2-room:
     <<: *service
     image: ${REGISTRY}/campus-space-m2-room:${IMAGE_TAG}
-    environment: { NODE_ENV: production, M2_PORT: "3000" }
+    environment:
+      <<: *common-env
+      M2_PORT: "3000"
+      M2_DATABASE_URL: ${M2_DATABASE_URL:?}
     depends_on:
       migrate-m2: { condition: service_completed_successfully }
     healthcheck:
       test: ["CMD", "wget", "-qO-", "http://127.0.0.1:3000/api/m2/health"]
+      interval: 10s
+      timeout: 3s
+      retries: 10
   m3-repair:
     <<: *service
     image: ${REGISTRY}/campus-space-m3-repair:${IMAGE_TAG}
-    environment: { NODE_ENV: production, M3_PORT: "3000" }
+    environment:
+      <<: *common-env
+      M3_PORT: "3000"
+      M3_DATABASE_URL: ${M3_DATABASE_URL:?}
     depends_on:
       migrate-m3: { condition: service_completed_successfully }
     healthcheck:
       test: ["CMD", "wget", "-qO-", "http://127.0.0.1:3000/api/m3/health"]
+      interval: 10s
+      timeout: 3s
+      retries: 10
 
   web:
+    <<: *service
     image: ${REGISTRY}/campus-space-web:${IMAGE_TAG}
-    restart: unless-stopped
     ports:
       - "${HTTP_PORT:-8080}:80"
     depends_on:

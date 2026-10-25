@@ -1,4 +1,9 @@
-import { ConflictException, NotFoundException, UnauthorizedException } from "@nestjs/common";
+import {
+  ConflictException,
+  HttpException,
+  NotFoundException,
+  UnauthorizedException,
+} from "@nestjs/common";
 import { describe, expect, it } from "vitest";
 import { z } from "zod";
 import { mapException } from "./api-exception.filter";
@@ -36,5 +41,17 @@ describe("mapException", () => {
   it("joins array messages from Nest validation responses", () => {
     const mapped = mapException(new ConflictException(["a", "b"]));
     expect(mapped.body.error?.message).toBe("a; b");
+  });
+});
+
+describe("mapException for unlisted statuses", () => {
+  it("maps an unlisted 4xx to CLIENT_ERROR, not INTERNAL", () => {
+    const mapped = mapException(new HttpException("unsupported media", 415));
+    expect(mapped.status).toBe(415);
+    expect(mapped.body.error?.code).toBe("CLIENT_ERROR");
+  });
+
+  it("maps an unlisted 5xx to INTERNAL", () => {
+    expect(mapException(new HttpException("upstream", 502)).body.error?.code).toBe("INTERNAL");
   });
 });

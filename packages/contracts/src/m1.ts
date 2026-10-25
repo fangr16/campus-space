@@ -30,8 +30,8 @@ export type SeatDto = z.infer<typeof SeatDtoSchema>;
 
 /** Query string for GET /api/m1/rooms. All fields optional; strings are coerced. */
 export const RoomQuerySchema = z.object({
-  building: z.string().trim().min(1).optional(),
-  keyword: z.string().trim().min(1).optional(),
+  building: z.string().trim().min(1).max(50).optional(),
+  keyword: z.string().trim().min(1).max(50).optional(),
 });
 export type RoomQuery = z.infer<typeof RoomQuerySchema>;
 

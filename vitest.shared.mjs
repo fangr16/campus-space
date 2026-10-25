@@ -53,6 +53,7 @@ export function sharedVitestConfig(options = {}) {
           "src/**/*.spec.ts",
           "src/**/*.int-spec.ts",
           "src/main.ts",
+          "src/seed.ts",
           "src/**/index.ts",
           "src/**/*.module.ts",
           "generated/**",

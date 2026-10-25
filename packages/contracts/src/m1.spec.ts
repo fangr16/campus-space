@@ -37,3 +37,10 @@ describe("ClockTimeSchema", () => {
     expect(ClockTimeSchema.safeParse(v).success).toBe(false);
   });
 });
+
+describe("RoomQuerySchema limits", () => {
+  it("rejects keywords and buildings longer than 50 characters", () => {
+    expect(RoomQuerySchema.safeParse({ keyword: "x".repeat(51) }).success).toBe(false);
+    expect(RoomQuerySchema.safeParse({ building: "x".repeat(50) }).success).toBe(true);
+  });
+});
