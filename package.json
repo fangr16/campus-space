@@ -1,0 +1,36 @@
+{
+  "name": "campus-space",
+  "version": "0.0.0",
+  "private": true,
+  "description": "校园资源服务平台：自习座位预约、整教室预约审批、物业报修工单",
+  "license": "MIT",
+  "packageManager": "pnpm@11.5.0",
+  "engines": {
+    "node": ">=24"
+  },
+  "scripts": {
+    "prepare": "lefthook install",
+    "dev": "turbo run dev",
+    "build": "turbo run build",
+    "typecheck": "turbo run typecheck",
+    "lint": "biome check .",
+    "lint:fix": "biome check --write .",
+    "verify": "pnpm lint && pnpm typecheck && pnpm verify:docs",
+    "verify:docs": "node scripts/verify-docs.mjs",
+    "test": "turbo run test",
+    "test:integration": "turbo run test:integration",
+    "mutation": "turbo run mutation",
+    "db:up": "docker compose -f deploy/docker-compose.yml up -d db",
+    "db:down": "docker compose -f deploy/docker-compose.yml down",
+    "db:migrate": "turbo run db:migrate",
+    "db:seed": "turbo run db:seed"
+  },
+  "devDependencies": {
+    "@biomejs/biome": "2.6.2",
+    "@commitlint/cli": "^21.2.4",
+    "@commitlint/config-conventional": "^21.2.4",
+    "lefthook": "^2.2.2",
+    "turbo": "^2.11.10",
+    "typescript": "~5.9.3"
+  }
+}

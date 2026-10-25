@@ -1,0 +1,12 @@
+packages:
+  - apps/*
+  - packages/*
+  - e2e
+
+# Supply-chain cooldown: only install versions published at least 3 days ago
+# (same idea as the Dependabot cooldown observed in the Lab1 analysis).
+minimumReleaseAge: 4320
+
+# Packages allowed to run install scripts. Everything else is blocked by default.
+allowBuilds:
+  lefthook: true
