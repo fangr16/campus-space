@@ -1,0 +1,66 @@
+// M2 whole-room booking and approval, schema "m2". Owner: module group 2.
+// Migrations: pnpm --filter @campus/m2-room db:migrate:dev --name <change>
+
+generator client {
+  provider = "prisma-client-js"
+  output   = "../generated/prisma"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("M2_DATABASE_URL")
+}
+
+/// Lifecycle of a whole-room booking (REQ-M2-03, REQ-M2-04). Transitions live in booking-status.ts.
+enum BookingStatus {
+  PENDING
+  APPROVED
+  REJECTED
+  CANCELLED
+  EXPIRED
+}
+
+enum ApprovalDecision {
+  APPROVED
+  REJECTED
+}
+
+/// A request to occupy a whole room for a time window. roomId references m1 master data by id
+/// over the public contract; there is no cross-schema foreign key (ADR-0003).
+model RoomBooking {
+  id             String           @id @default(cuid())
+  roomId         String
+  applicantId    String
+  purpose        String
+  attendees      Int
+  from           DateTime
+  to             DateTime
+  status         BookingStatus    @default(PENDING)
+  /// Approval level currently waiting; 1-based. requiredLevels is fixed when the booking is created.
+  currentLevel   Int              @default(1)
+  requiredLevels Int              @default(1)
+  /// When the booking auto-expires if nobody decides (REQ-M2-04).
+  expiresAt      DateTime
+  createdAt      DateTime         @default(now())
+  updatedAt      DateTime         @updatedAt
+  approvals      ApprovalRecord[]
+
+  @@index([roomId, from, to])
+  @@index([applicantId, createdAt])
+  @@index([status, expiresAt])
+  @@map("room_bookings")
+}
+
+model ApprovalRecord {
+  id         String           @id @default(cuid())
+  bookingId  String
+  level      Int
+  approverId String
+  decision   ApprovalDecision
+  comment    String?
+  decidedAt  DateTime         @default(now())
+  booking    RoomBooking      @relation(fields: [bookingId], references: [id], onDelete: Cascade)
+
+  @@unique([bookingId, level])
+  @@map("approval_records")
+}

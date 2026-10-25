@@ -1,0 +1,70 @@
+// M3 maintenance tickets, schema "m3". Owner: module group 3.
+// Migrations: pnpm --filter @campus/m3-repair db:migrate:dev --name <change>
+
+generator client {
+  provider = "prisma-client-js"
+  output   = "../generated/prisma"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("M3_DATABASE_URL")
+}
+
+/// Lifecycle of a repair ticket (REQ-M3-02..05). Transitions live in ticket-status.ts.
+enum TicketStatus {
+  REPORTED
+  DISPATCHED
+  IN_PROGRESS
+  ESCALATED
+  DONE
+  ACCEPTED
+  REWORK
+  CANCELLED
+}
+
+enum TicketPriority {
+  LOW
+  NORMAL
+  HIGH
+  URGENT
+}
+
+/// A reported fault in a room or at a seat. roomId/seatId reference m1 master data by id over
+/// the public contract; no cross-schema foreign key (ADR-0003).
+model RepairTicket {
+  id          String         @id @default(cuid())
+  roomId      String
+  seatId      String?
+  reporterId  String
+  category    String
+  description String
+  status      TicketStatus   @default(REPORTED)
+  priority    TicketPriority @default(NORMAL)
+  assigneeId  String?
+  /// Deadline for the current stage; passing it triggers escalation (REQ-M3-04).
+  slaDueAt    DateTime?
+  createdAt   DateTime       @default(now())
+  updatedAt   DateTime       @updatedAt
+  events      TicketEvent[]
+
+  @@index([roomId, status])
+  @@index([assigneeId, status])
+  @@index([status, slaDueAt])
+  @@map("repair_tickets")
+}
+
+/// Append-only history of status changes, the raw material for X-1 tracing and audit.
+model TicketEvent {
+  id         String        @id @default(cuid())
+  ticketId   String
+  fromStatus TicketStatus?
+  toStatus   TicketStatus
+  actorId    String
+  note       String?
+  createdAt  DateTime      @default(now())
+  ticket     RepairTicket  @relation(fields: [ticketId], references: [id], onDelete: Cascade)
+
+  @@index([ticketId, createdAt])
+  @@map("ticket_events")
+}
