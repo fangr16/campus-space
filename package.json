@@ -29,8 +29,12 @@
     "@biomejs/biome": "2.6.2",
     "@commitlint/cli": "^21.2.4",
     "@commitlint/config-conventional": "^21.2.4",
+    "@swc/core": "catalog:",
+    "@vitest/coverage-v8": "catalog:",
     "lefthook": "^2.2.2",
     "turbo": "^2.11.10",
-    "typescript": "~5.9.3"
+    "typescript": "~5.9.3",
+    "unplugin-swc": "catalog:",
+    "vitest": "catalog:"
   }
 }

@@ -52,11 +52,15 @@
       },
       "style": {
         "noParameterAssign": "error",
-        "useConst": "error"
+        "useConst": "error",
+        "useImportType": "off"
       },
       "correctness": {
         "noUnusedImports": "error",
         "noUnusedVariables": "error"
+      },
+      "complexity": {
+        "noStaticOnlyClass": "off"
       }
     }
   },

@@ -10,3 +10,52 @@ minimumReleaseAge: 4320
 # Packages allowed to run install scripts. Everything else is blocked by default.
 allowBuilds:
   lefthook: true
+  "@swc/core": true
+  "@prisma/client": true
+  "@prisma/engines": true
+  prisma: true
+  esbuild: true
+  "@scarf/scarf": false
+
+# One version per dependency across the workspace. Packages reference them as "catalog:".
+catalog:
+  # runtime
+  "@nestjs/common": ^12.2.0
+  "@nestjs/core": ^12.2.0
+  "@nestjs/platform-express": ^12.2.0
+  "@nestjs/jwt": ^12.0.3
+  "@nestjs/swagger": ^12.0.3
+  "@prisma/client": ^6.19.3
+  bcryptjs: ^3.0.3
+  reflect-metadata: ^0.2.2
+  rxjs: ^7.8.2
+  zod: ^4.6.7
+  # web
+  react: ^19.3.1
+  react-dom: ^19.3.1
+  react-router: ^8.5.0
+  antd: ^6.6.7
+  "@ant-design/icons": ^6.3.4
+  "@tanstack/react-query": ^5.104.5
+  dayjs: ^1.11.23
+  # tooling
+  "@nestjs/cli": ^12.0.10
+  "@nestjs/testing": ^12.2.0
+  "@playwright/test": ^1.64.1
+  "@stryker-mutator/core": ^10.0.0
+  "@stryker-mutator/vitest-runner": ^10.0.0
+  "@swc/core": ^1.16.0
+  "@types/bcryptjs": ^3.0.0
+  "@types/node": ^24.0.0
+  "@types/react": ^19.3.0
+  "@types/react-dom": ^19.3.0
+  "@types/supertest": ^7.2.1
+  "@vitejs/plugin-react": ^6.1.2
+  "@vitest/coverage-v8": ^5.0.5
+  prisma: ^6.19.3
+  supertest: ^7.3.1
+  tsx: ^4.23.15
+  typescript: ~5.9.3
+  unplugin-swc: ^2.0.0
+  vite: ^8.3.5
+  vitest: ^5.0.5
