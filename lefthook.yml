@@ -21,5 +21,11 @@ commit-msg:
 
 pre-push:
   commands:
+    # Only the packages changed against origin/main; the very first push (no origin/main yet)
+    # runs the whole workspace instead of skipping.
     affected-typecheck-and-test:
-      run: pnpm turbo run typecheck test --filter="...[origin/main]"
+      run: >
+        if git rev-parse --verify --quiet origin/main >/dev/null;
+        then pnpm turbo run typecheck test --filter="...[origin/main]";
+        else pnpm turbo run typecheck test;
+        fi
