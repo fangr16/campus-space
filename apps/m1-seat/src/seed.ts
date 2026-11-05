@@ -7,6 +7,7 @@
  * larger range). Which seats count as powered is derived from the outlets at read time.
  */
 import { PrismaClient } from "../generated/prisma";
+import { SETTING_DEFAULTS } from "./settings/settings.service";
 
 const prisma = new PrismaClient();
 
@@ -122,7 +123,13 @@ async function main(): Promise<void> {
       outlets += 1;
     }
   }
-  console.info(`seed: ${ROOMS.length} rooms, ${seats} seats, ${outlets} power outlets`);
+  for (const [key, value] of Object.entries(SETTING_DEFAULTS)) {
+    // Create only: an administrator's change must survive the next deploy's seed run.
+    await prisma.setting.upsert({ where: { key }, update: {}, create: { key, value } });
+  }
+  console.info(
+    `seed: ${ROOMS.length} rooms, ${seats} seats, ${outlets} power outlets, ${Object.keys(SETTING_DEFAULTS).length} settings`,
+  );
 }
 
 main()

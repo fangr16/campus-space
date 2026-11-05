@@ -58,7 +58,7 @@ pnpm dev                      # 四个服务 + Vite(5180)
 |---|---|---|
 | `P1000: Authentication failed` | 5432/5433 上是本机原生 PostgreSQL，不是 Docker 的 | 用 55432（已是默认） |
 | Vite 报端口占用 | 本机其它项目占用 | 改 `.env` 的 `WEB_PORT`，并同步 e2e 的 `E2E_BASE_URL` |
-| `prisma generate` 偶发失败（并行） | 多服务同时生成时的文件锁 | 重跑；CI 里 `turbo` 会重试一次 |
+| `prisma generate` 报 `EPERM ... query_engine-windows.dll.node` | 正在运行的服务进程（`pnpm dev`）占用了生成的查询引擎文件 | 先停掉 `pnpm dev` 再跑 `pnpm generate` / `pnpm test`；CI 环境没有常驻进程，不受影响 |
 | 浏览器报 contracts 没有导出，或 contracts 改动后页面空白 | 工作区包是 CommonJS 产物，预打包副本在重建后会过期 | `vite.config.ts` 已把 `@campus/contracts` 别名到源码 `packages/contracts/src`，开发服务器直接编译源码，无需预打包 |
 
 ## 环境变量

@@ -40,14 +40,23 @@ export function mapException(exception: unknown): MappedError {
     const code =
       STATUS_TO_CODE[status] ?? (status < 500 ? ErrorCode.CLIENT_ERROR : ErrorCode.INTERNAL);
     const response = exception.getResponse();
-    const message =
-      typeof response === "string"
-        ? response
-        : ((response as { message?: string | string[] }).message ?? exception.message);
-    return {
-      status,
-      body: fail(code, Array.isArray(message) ? message.join("; ") : String(message)),
+    if (typeof response === "string") return { status, body: fail(code, response) };
+    // Nest puts { message, statusCode, error } in the response; anything else a handler added
+    // (for example { rule: "whole-hour" }) is surfaced as details so clients can branch on it.
+    const {
+      message,
+      statusCode: _status,
+      error: _error,
+      ...rest
+    } = response as {
+      message?: string | string[];
+      statusCode?: number;
+      error?: string;
+      [key: string]: unknown;
     };
+    const text = Array.isArray(message) ? message.join("; ") : String(message ?? exception.message);
+    const details = Object.keys(rest).length > 0 ? rest : undefined;
+    return { status, body: fail(code, text, details) };
   }
   return {
     status: HttpStatus.INTERNAL_SERVER_ERROR,

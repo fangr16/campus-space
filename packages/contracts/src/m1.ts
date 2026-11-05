@@ -92,3 +92,78 @@ export const RoomSeatsResponseSchema = z.object({
   outlets: z.array(PowerOutletDtoSchema),
 });
 export type RoomSeatsResponse = z.infer<typeof RoomSeatsResponseSchema>;
+
+/* ----------------------------------------------------------------------------------------- */
+/* Reservations (REQ-M1-04)                                                                   */
+/* ----------------------------------------------------------------------------------------- */
+
+export const ReservationStatus = {
+  BOOKED: "BOOKED",
+  CANCELLED: "CANCELLED",
+} as const;
+export type ReservationStatus = (typeof ReservationStatus)[keyof typeof ReservationStatus];
+export const ReservationStatusSchema = z.enum(
+  Object.values(ReservationStatus) as [ReservationStatus, ...ReservationStatus[]],
+);
+
+/**
+ * Rule names returned in `error.details.rule` when a reservation is refused, so the UI can
+ * explain which rule was broken without parsing messages.
+ */
+export const ReservationRule = {
+  WHOLE_HOUR: "whole-hour",
+  DURATION: "duration",
+  OPENING_HOURS: "opening-hours",
+  IN_THE_PAST: "in-the-past",
+  USER_OVERLAP: "user-overlap",
+  SEAT_OVERLAP: "seat-overlap",
+  NOT_BOOKED: "not-booked",
+  ALREADY_STARTED: "already-started",
+} as const;
+export type ReservationRule = (typeof ReservationRule)[keyof typeof ReservationRule];
+
+export const CreateReservationRequestSchema = z.object({
+  seatId: z.string().min(1),
+  from: z.string().datetime({ offset: true }),
+  to: z.string().datetime({ offset: true }),
+});
+export type CreateReservationRequest = z.infer<typeof CreateReservationRequestSchema>;
+
+export const ReservationDtoSchema = z.object({
+  id: z.string(),
+  seatId: z.string(),
+  seatCode: z.string(),
+  roomId: z.string(),
+  roomCode: z.string(),
+  roomName: z.string(),
+  userId: z.string(),
+  from: z.string().datetime(),
+  to: z.string().datetime(),
+  status: ReservationStatusSchema,
+  cancelReason: z.string().nullable(),
+  createdAt: z.string().datetime(),
+});
+export type ReservationDto = z.infer<typeof ReservationDtoSchema>;
+
+/* ----------------------------------------------------------------------------------------- */
+/* Module settings (REQ-M1-01, REQ-M1-04 "参数可调")                                           */
+/* ----------------------------------------------------------------------------------------- */
+
+export const SettingKey = {
+  RESERVATION_MAX_HOURS: "reservation.maxHours",
+  RESERVATION_SLOT_MINUTES: "reservation.slotMinutes",
+  ROOM_TIMEZONE: "room.timezone",
+} as const;
+export type SettingKey = (typeof SettingKey)[keyof typeof SettingKey];
+
+export const SettingDtoSchema = z.object({
+  key: z.string(),
+  value: z.string(),
+  updatedAt: z.string().datetime(),
+});
+export type SettingDto = z.infer<typeof SettingDtoSchema>;
+
+export const UpdateSettingRequestSchema = z.object({
+  value: z.string().trim().min(1).max(100),
+});
+export type UpdateSettingRequest = z.infer<typeof UpdateSettingRequestSchema>;

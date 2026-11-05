@@ -55,3 +55,21 @@ describe("mapException for unlisted statuses", () => {
     expect(mapException(new HttpException("upstream", 502)).body.error?.code).toBe("INTERNAL");
   });
 });
+
+describe("mapException details pass-through", () => {
+  it("surfaces extra fields of an object response as details", () => {
+    const mapped = mapException(
+      new ConflictException({ message: "seat is already taken", rule: "seat-overlap" }),
+    );
+    expect(mapped.status).toBe(409);
+    expect(mapped.body.error).toEqual({
+      code: "CONFLICT",
+      message: "seat is already taken",
+      details: { rule: "seat-overlap" },
+    });
+  });
+
+  it("omits details when the object response only carries Nest's own fields", () => {
+    expect(mapException(new NotFoundException("x")).body.error).not.toHaveProperty("details");
+  });
+});

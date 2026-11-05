@@ -11,7 +11,7 @@
 | TASK-003 | 填写 `docs/team.md` 姓名、评审节点日期 | — | 组长 | — | 待领 |
 | TASK-004 | 华为云：2 台 ECS、SWR 组织、代金券 | — | 平台 | — | 待领 |
 | TASK-005 | 每位组员本机跑通 `pnpm install && pnpm verify && pnpm test && pnpm db:up && pnpm db:migrate && pnpm db:seed && pnpm dev` | — | 全员 | — | 待领 |
-| TASK-010 | M1 预约：创建/取消，整点、≤ 4h 参数化、开放时间与冲突校验 | REQ-M1-04 | 模块组 1 | TASK-005 | 待领 |
+| TASK-010 | M1 预约：创建/取消，整点、≤ 4h 参数化、开放时间与冲突校验（MR A 接口；MR B 前端） | REQ-M1-04 | 组长 | TASK-005 | 评审中（MR A） |
 | TASK-011 | M1 签到：每日动态编码与 Web 录入 | REQ-M1-05 | 模块组 1 | TASK-010 | 待领 |
 | TASK-012 | M1 提醒与违约定时任务（可注入时钟） | REQ-M1-06、REQ-D3-01 | 模块组 1 | TASK-010、TASK-042 | 待领 |
 | TASK-013 | M1 历史与再次预约 | REQ-M1-07 | 模块组 1 | TASK-010 | 待领 |

@@ -47,8 +47,9 @@ model Seat {
   hasPowerOutlet Boolean      @default(false)
   isActive       Boolean      @default(true)
   createdAt      DateTime     @default(now())
-  room           Room         @relation(fields: [roomId], references: [id], onDelete: Cascade)
+  room           Room          @relation(fields: [roomId], references: [id], onDelete: Cascade)
   statuses       SeatStatus[]
+  reservations   Reservation[]
 
   @@unique([roomId, code])
   @@map("seats")
@@ -104,4 +105,44 @@ model SeatStatus {
   @@index([seatId, from, to])
   @@index([source, refId])
   @@map("seat_statuses")
+}
+
+enum ReservationStatus {
+  BOOKED
+  CANCELLED
+}
+
+/// A student holding one seat for one time window (REQ-M1-04). Every BOOKED reservation has a
+/// matching seat_statuses row (kind RESERVED, source M1_RESERVATION, refId = reservation id);
+/// the exclusion constraint on seat_statuses (see migration add_reservations) is what makes
+/// double booking impossible, not application code. Check-in and no-show states arrive with
+/// REQ-M1-05/06.
+model Reservation {
+  id           String            @id @default(cuid())
+  seatId       String
+  roomId       String
+  userId       String
+  from         DateTime
+  to           DateTime
+  status       ReservationStatus @default(BOOKED)
+  cancelReason String?
+  cancelledAt  DateTime?
+  createdAt    DateTime          @default(now())
+  updatedAt    DateTime          @updatedAt
+  seat         Seat              @relation(fields: [seatId], references: [id], onDelete: Cascade)
+
+  @@index([userId, from])
+  @@index([seatId, from, to])
+  @@index([roomId, from])
+  @@map("reservations")
+}
+
+/// Module-local parameters managed by administrators (REQ-M1-01/04): reservation.maxHours,
+/// reservation.slotMinutes, room.timezone. Values are strings; parsing lives in settings.service.ts.
+model Setting {
+  key       String   @id
+  value     String
+  updatedAt DateTime @updatedAt
+
+  @@map("settings")
 }
