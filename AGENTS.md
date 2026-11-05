@@ -39,8 +39,8 @@ CI runs the full matrix.
 
 - **Branching.** Never commit to `main`. One merge request per task, under 400 changed
   lines of non-test code and under 3 days old; split otherwise. Test files do not count,
-  but an MR over the limit must state the reason and the line counts in its description. Rebase onto `main`, then the reviewer merges
-  with `--no-ff`. Never use raw `--force`; use `--force-with-lease`.
+  but an MR over the limit must state the reason and the line counts in its description.
+  Rebase onto `main`, then the reviewer merges with `--no-ff`. Never use raw `--force`; use `--force-with-lease`.
 - **Conflicts are resolved by a human** on the feature branch. An agent may describe a
   conflict but must stop and hand it over. Never auto-resolve or auto-merge.
 - **Provenance.** Every merge request cites a requirement id (`REQ-*`) or task id
