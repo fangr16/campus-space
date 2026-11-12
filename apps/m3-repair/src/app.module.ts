@@ -3,6 +3,7 @@ import { CommonModule } from "@campus/nest-common";
 import { Module } from "@nestjs/common";
 import { PrismaModule } from "./prisma/prisma.module";
 import { PrismaService } from "./prisma/prisma.service";
+import { TicketsModule } from "./tickets/tickets.module";
 
 export const SERVICE_NAME = "m3";
 
@@ -19,6 +20,7 @@ export function createAppModule(options = authOptionsFromEnv()) {
         },
       }),
       AuthModule.forRoot(options),
+      TicketsModule,
     ],
   })
   class AppModule {}

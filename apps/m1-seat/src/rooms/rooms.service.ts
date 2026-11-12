@@ -1,6 +1,7 @@
 import type {
   JwtPayload,
   RoomDto,
+  RoomLookup,
   RoomQuery,
   RoomSeatsResponse,
   SeatQuery,
@@ -19,6 +20,13 @@ import { withDerivedPower } from "./seat-power";
 @Injectable()
 export class RoomsService {
   constructor(private readonly rooms: RoomsRepository) {}
+
+  async lookup(roomId: string): Promise<RoomLookup> {
+    const room = await this.rooms.findRoomById(roomId);
+    if (!room) throw new NotFoundException("room not found");
+    const seats = await this.rooms.findSeats(roomId);
+    return { id: room.id, seatIds: seats.map((seat) => seat.id) };
+  }
 
   /** Visible rooms; with a window each room also reports how many seats are free in it. */
   async listRooms(user: JwtPayload, query: RoomQuery): Promise<RoomDto[]> {

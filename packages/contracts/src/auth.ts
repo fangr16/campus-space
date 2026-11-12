@@ -41,3 +41,10 @@ export type LoginResponse = z.infer<typeof LoginResponseSchema>;
 
 /** Header carrying the shared secret for service-to-service calls (ADR-0003). */
 export const INTERNAL_TOKEN_HEADER = "x-internal-token";
+
+/** Internal platform lookup; false also covers unknown and inactive users. */
+export const MaintainerLookupSchema = z.object({
+  id: z.string(),
+  eligible: z.boolean(),
+});
+export type MaintainerLookup = z.infer<typeof MaintainerLookupSchema>;

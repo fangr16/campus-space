@@ -167,6 +167,13 @@ export const RoomSeatsResponseSchema = z.object({
 });
 export type RoomSeatsResponse = z.infer<typeof RoomSeatsResponseSchema>;
 
+/** Internal M1 lookup for validating a report without cross-schema reads. */
+export const RoomLookupSchema = z.object({
+  id: z.string(),
+  seatIds: z.array(z.string()),
+});
+export type RoomLookup = z.infer<typeof RoomLookupSchema>;
+
 /* ----------------------------------------------------------------------------------------- */
 /* Reservations (REQ-M1-04)                                                                   */
 /* ----------------------------------------------------------------------------------------- */

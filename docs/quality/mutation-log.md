@@ -44,3 +44,16 @@
 | # | 破坏 | 预期 | 结果 |
 |---|---|---|---|
 | 5 | `apps/m1-seat/src/rooms/seat-availability.ts` 中"状态在 from 时刻已生效"的判断由 `status.from > from` 改为 `>=`（恰好从所选时间开始的预约被当成"晚些才开始"，座位变成 FREE） | 单元与集成测试都失败 | 单元 6 条失败（RESERVED / MINE / BLOCKED / 优先级 / 晚开始忽略 / service 附加状态），集成 2 条失败（`marks each seat MINE, BLOCKED, RESERVED or FREE`、`shows the same reservation as RESERVED to another student`）；恢复后 38 单元（rooms 目录）+ 23 集成全部通过 |
+
+## 2026-11-12 · TASK-031 报修上报与派单（评审前）
+
+命令：`pnpm --filter @campus/m3-repair mutation`、`pnpm --filter @campus/platform mutation`、`pnpm --filter @campus/m1-seat mutation`、`pnpm --filter @campus/contracts mutation`。
+
+| 包 | 杀死 / 存活 / 无覆盖 | 得分 | 说明 |
+|---|---|---|---|
+| M3 | 55 / 6 / 0 | 90.16% | `tickets.service.ts` 为 82.61%；补齐派单期限等于当前时刻和上游房间 id 不一致的测试后，相应分支变异被杀死。4 个存活变异仅改写错误文案；状态机的 2 个存活变异属后续 SLA 任务。 |
+| platform | 24 / 1 / 1 | 92.31% | 新增的 `users.service.ts` 为 100%；其余是原登录服务的日志文案与默认期限分支。 |
+| M1 | 298 / 38 / 41 | 79.05% | 本次新增的内部查询由数据库集成测试覆盖；单元变异中的无覆盖主要来自既有 `settings.service.ts` 与适配层边界。 |
+| contracts | 55 / 20 / 0 | 73.33% | 本次新增的 M3 schema 和查询 DTO 无可变异语句；存活变异主要在既有 M1 时间窗口错误细节。 |
+
+Stryker 报告留在各包的 `reports/mutation/`，不纳入版本管理。

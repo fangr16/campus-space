@@ -144,6 +144,28 @@ describe("GET /api/m1/rooms", () => {
   });
 });
 
+describe("GET /api/m1/rooms/internal/:id/lookup", () => {
+  it("requires the internal token and returns only active seat ids", async () => {
+    await request(app.getHttpServer())
+      .get(`/api/m1/rooms/internal/${libRoomId}/lookup`)
+      .expect(401);
+    const res = await request(app.getHttpServer())
+      .get(`/api/m1/rooms/internal/${libRoomId}/lookup`)
+      .set("x-internal-token", options.internalToken)
+      .expect(200);
+    const prisma = app.get(PrismaService);
+    const seats = await prisma.seat.findMany({ where: { roomId: libRoomId, isActive: true } });
+    expect(res.body.data).toEqual({ id: libRoomId, seatIds: seats.map((s) => s.id) });
+  });
+
+  it("rejects an unknown room", async () => {
+    await request(app.getHttpServer())
+      .get("/api/m1/rooms/internal/missing/lookup")
+      .set("x-internal-token", options.internalToken)
+      .expect(404);
+  });
+});
+
 describe("GET /api/m1/rooms/:id/seats", () => {
   it("returns seats with positions, derived power and the room's outlets", async () => {
     const res = await request(app.getHttpServer())
