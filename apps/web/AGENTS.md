@@ -20,8 +20,17 @@ services, the same shape nginx serves in deployment.
   `api.ts`; never trust `any` from fetch.
 - Server state lives in TanStack Query; no copying of query results into local state.
 - Every query renders loading, empty and error states.
-- Routes: `/login`, `/m1/rooms`, `/m1/rooms/:id`, `/m2`, `/m3`. Add new routes in `app.tsx`.
+- Routes: `/login`, `/m1/rooms`, `/m1/rooms/:id`, `/m1/reservations`, `/m2`, `/m3`. Add new
+  routes in `app.tsx`.
+- Reservation is time-first (REQ-M1-11): `useTimeWindow` keeps `date`, `start` and `view` in
+  the URL; `TimeBar` offers only legal days and starts, `SelectionCard` only the durations the
+  seat allows (`allowedSlots` in `time-window.model.ts`). Server rule names map to Chinese
+  text in `reservation.model.ts`. Seat states come from the API's `availability`; never
+  derive them client-side from reservations.
 - Components are verified by the Playwright smoke in `/e2e`; keep pure logic in
   `*.model.ts` so it can be unit tested.
 - Semantic HTML first (`main`, `nav`, `section`, headings in order); Ant Design for forms
   and tables only.
+- Phones (≤ 768px) are a first-class layout: the shell header folds, the floor plan scrolls
+  inside `.seat-map__viewport` with seats ≥ 44px, and `SeatList` is the list alternative.
+  `e2e/tests/mobile.spec.ts` guards this.

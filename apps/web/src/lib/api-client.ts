@@ -67,6 +67,7 @@ export function createApiClient(options: ApiClientOptions) {
     get: <T extends z.ZodTypeAny>(path: string, schema: T) => request("GET", path, schema),
     post: <T extends z.ZodTypeAny>(path: string, schema: T, body: unknown) =>
       request("POST", path, schema, body),
+    delete: <T extends z.ZodTypeAny>(path: string, schema: T) => request("DELETE", path, schema),
   };
 }
 

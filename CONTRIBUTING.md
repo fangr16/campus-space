@@ -10,8 +10,9 @@
 4. **实现**：agent 产出的每次变更由你阅读后再提交。不接受"一次性 2000 行"的提交。
 5. **自检**：推送前跑 `pre-push-checks` skill，开 MR 前跑 `code-review` skill。
 6. **开 MR**：用 `docs/ai/mr-template.md` 的三段：Motivation（引用 REQ/TASK/ADR）、Changes、Evidence。
-7. **评审**：普通变更 1 人；schema / contracts / 跨模块 / `packages/*` 变更 2 人且至少 1 人来自受影响模块。评审意见全部解决、流水线通过后，由评审人合并。
-8. **合并**：先 `git rebase origin/main`，冲突**由人**在分支上解决，推送后由评审人以 `--no-ff` 合并。
+7. **规模**：MR 非测试代码 ≤ 400 行；测试文件不计入，但超限的 MR 必须在描述里写明原因和行数（2026-11-05 组长决定）。
+8. **评审**：普通变更 1 人；schema / contracts / 跨模块 / `packages/*` 变更 2 人且至少 1 人来自受影响模块。评审意见全部解决、流水线通过后，由评审人合并。
+9. **合并**：先 `git rebase origin/main`，冲突**由人**在分支上解决，推送后由评审人以 `--no-ff` 合并。
 
 ## 2. 提交信息
 

@@ -32,3 +32,15 @@
 | # | 破坏 | 预期 | 结果 |
 |---|---|---|---|
 | 3 | `apps/m1-seat/src/rooms/seat-power.ts` 中覆盖判定由 `<=` 改为 `<`（边界座位不再算覆盖） | 单元与集成测试都失败 | 单元 6 条失败（边界、range=1 相邻桌、推导与筛选），集成 2 条失败（`returns seats with positions, derived power`、`applies hasPower=true`）；恢复后 27 单元 + 9 集成全部通过 |
+
+## 2026-11-05 · TASK-010 预约核心（MR A）
+
+| # | 破坏 | 预期 | 结果 |
+|---|---|---|---|
+| 4 | 从迁移 `add_reservations` 中删掉 `seat_statuses_no_overlap` 排他约束后重放测试库 | 并发用例失败 | `lets exactly one of ten concurrent requests succeed` 失败：10 个请求全部 201；`rejects an overlapping reservation` 也失败（409 变 201）。恢复约束后 18 条集成测试全部通过。证明防重复预约的是数据库约束而不是应用代码 |
+
+## 2026-11-05 · TASK-019 时间优先交互
+
+| # | 破坏 | 预期 | 结果 |
+|---|---|---|---|
+| 5 | `apps/m1-seat/src/rooms/seat-availability.ts` 中"状态在 from 时刻已生效"的判断由 `status.from > from` 改为 `>=`（恰好从所选时间开始的预约被当成"晚些才开始"，座位变成 FREE） | 单元与集成测试都失败 | 单元 6 条失败（RESERVED / MINE / BLOCKED / 优先级 / 晚开始忽略 / service 附加状态），集成 2 条失败（`marks each seat MINE, BLOCKED, RESERVED or FREE`、`shows the same reservation as RESERVED to another student`）；恢复后 38 单元（rooms 目录）+ 23 集成全部通过 |

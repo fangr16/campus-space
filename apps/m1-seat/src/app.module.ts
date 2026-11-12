@@ -1,9 +1,12 @@
 import { AuthModule, authOptionsFromEnv } from "@campus/auth";
 import { CommonModule } from "@campus/nest-common";
 import { Module } from "@nestjs/common";
+import { ClockModule } from "./clock";
 import { PrismaModule } from "./prisma/prisma.module";
 import { PrismaService } from "./prisma/prisma.service";
+import { ReservationsModule } from "./reservations/reservations.module";
 import { RoomsModule } from "./rooms/rooms.module";
+import { SettingsModule } from "./settings/settings.module";
 
 export const SERVICE_NAME = "m1";
 
@@ -20,7 +23,10 @@ export function createAppModule(options = authOptionsFromEnv()) {
         },
       }),
       AuthModule.forRoot(options),
+      ClockModule,
       RoomsModule,
+      SettingsModule,
+      ReservationsModule,
     ],
   })
   class AppModule {}

@@ -3,6 +3,7 @@ import { Injectable } from "@nestjs/common";
 import type { Prisma } from "../../generated/prisma";
 import { PrismaService } from "../prisma/prisma.service";
 import type { RoomVisibility } from "./room-visibility";
+import type { OverlappingStatus, TimeRange } from "./seat-availability";
 
 /** Data access for rooms, seats and outlets. Returns contract DTOs, never Prisma rows. */
 @Injectable()
@@ -56,6 +57,39 @@ export class RoomsRepository {
       hasPowerOutlet: false,
       isActive: s.isActive,
     }));
+  }
+
+  /** Status rows of the room's seats that overlap [from, to), for availability (REQ-M1-11). */
+  findOverlappingStatuses(roomId: string, window: TimeRange): Promise<OverlappingStatus[]> {
+    return this.prisma.seatStatus.findMany({
+      where: { seat: { roomId }, from: { lt: window.to }, to: { gt: window.from } },
+      select: { seatId: true, kind: true, source: true, refId: true, from: true, to: true },
+    });
+  }
+
+  /** Ids of the user's BOOKED reservations overlapping the window, to mark seats as MINE. */
+  async findUserReservationIds(userId: string, window: TimeRange): Promise<Set<string>> {
+    const rows = await this.prisma.reservation.findMany({
+      where: { userId, status: "BOOKED", from: { lt: window.to }, to: { gt: window.from } },
+      select: { id: true },
+    });
+    return new Set(rows.map((r) => r.id));
+  }
+
+  /** Number of active seats per room that carry at least one status in the window. */
+  async countOccupiedSeats(roomIds: string[], window: TimeRange): Promise<Map<string, number>> {
+    if (roomIds.length === 0) return new Map();
+    const rows = await this.prisma.seat.findMany({
+      where: {
+        roomId: { in: roomIds },
+        isActive: true,
+        statuses: { some: { from: { lt: window.to }, to: { gt: window.from } } },
+      },
+      select: { roomId: true },
+    });
+    const counts = new Map<string, number>();
+    for (const row of rows) counts.set(row.roomId, (counts.get(row.roomId) ?? 0) + 1);
+    return counts;
   }
 
   async findOutlets(roomId: string): Promise<PowerOutletDto[]> {

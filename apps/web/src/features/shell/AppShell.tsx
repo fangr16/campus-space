@@ -9,7 +9,10 @@ const NAV = [
   { to: "/m3", label: "报修工单", module: "M3" },
 ] as const;
 
-/** Authenticated frame: header with module navigation, page outlet, version footer. */
+/**
+ * Authenticated frame: header with module navigation, page outlet, version footer. Below
+ * 768px the header folds into two rows (brand + session, then a scrollable nav); see global.css.
+ */
 export function AppShell() {
   const session = useSession();
   const location = useLocation();
@@ -25,17 +28,22 @@ export function AppShell() {
         <nav className="shell__nav" aria-label="模块导航">
           {NAV.map((item) => (
             <NavLink key={item.to} to={item.to}>
-              <span aria-hidden="true">{item.module} · </span>
+              <span aria-hidden="true" className="shell__nav-module">
+                {item.module} ·{" "}
+              </span>
               {item.label}
             </NavLink>
           ))}
         </nav>
-        <span className="shell__user">
-          {session.user.displayName}（{session.user.roles.join(", ")}）
+        <span className="shell__session">
+          <span className="shell__user">
+            {session.user.displayName}
+            <span className="shell__roles">（{session.user.roles.join(", ")}）</span>
+          </span>
+          <Button size="small" onClick={() => authStore.signOut()}>
+            退出
+          </Button>
         </span>
-        <Button size="small" onClick={() => authStore.signOut()}>
-          退出
-        </Button>
       </header>
       <main className="shell__main">
         <Outlet />

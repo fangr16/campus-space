@@ -8,12 +8,17 @@ modules copy: migration → seed → repository → service → controller → u
 
 - `rooms/` room and seat master data, search, visibility and the floor plan (REQ-M1-02,
   07, 09, 10). `seat-power.ts` derives power availability from outlets; never store it.
-- Planned: `reservations/` (REQ-M1-04, 05, 06), `seat-status/` internal endpoints that M2
+  `seat-availability.ts` computes per-seat state for a `from`/`to` window (REQ-M1-11,
+  ADR-0010): MINE > BLOCKED > RESERVED at `from`, else FREE with `freeUntil`.
+- `reservations/` booking and cancellation (REQ-M1-04); rules are pure functions in
+  `reservation-rules.ts`, the clock is injected (`CLOCK`). `settings/` holds module parameters.
+- Planned: check-in and no-show (REQ-M1-05, 06), `seat-status/` internal endpoints that M2
   and M3 call to block and release seats (X-1, X-2).
 
 ## Tables
 
-`rooms`, `seats`, `power_outlets`, `seat_statuses`. `seats.hasPowerOutlet` is deprecated
+`rooms`, `seats`, `power_outlets`, `seat_statuses`, `reservations`, `settings`. Overlapping
+seat statuses are rejected by a database exclusion constraint (ADR-0009); never bypass it. `seats.hasPowerOutlet` is deprecated
 (derived at read time) and is dropped in the release after ADR-0007. `seat_statuses.source` is mandatory and mirrors
 `SeatStatusSource` in contracts (X-3). Never write a status row without `source` and `refId`.
 
