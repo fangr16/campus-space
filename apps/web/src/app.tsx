@@ -1,5 +1,6 @@
 import { Navigate, Route, Routes } from "react-router";
 import { LoginPage } from "./features/auth/LoginPage";
+import { MyReservationsPage } from "./features/m1/MyReservationsPage";
 import { RoomSeatsPage } from "./features/m1/RoomSeatsPage";
 import { RoomsPage } from "./features/m1/RoomsPage";
 import { BookingsPage } from "./features/m2/BookingsPage";
@@ -15,6 +16,7 @@ export function App() {
         <Route index element={<Navigate to="/m1/rooms" replace />} />
         <Route path="/m1/rooms" element={<RoomsPage />} />
         <Route path="/m1/rooms/:id" element={<RoomSeatsPage />} />
+        <Route path="/m1/reservations" element={<MyReservationsPage />} />
         <Route path="/m2" element={<BookingsPage />} />
         <Route path="/m3" element={<TicketsPage />} />
       </Route>

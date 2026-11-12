@@ -21,6 +21,43 @@ describe("SeatQuerySchema", () => {
   });
 });
 
+describe("window query (REQ-M1-11)", () => {
+  const from = "2026-11-10T02:00:00.000Z";
+  const to = "2026-11-10T04:00:00.000Z";
+
+  it("accepts a complete window on both list endpoints", () => {
+    expect(SeatQuerySchema.parse({ from, to })).toEqual({ from, to });
+    expect(RoomQuerySchema.parse({ from, to, keyword: "lib" })).toEqual({
+      from,
+      to,
+      keyword: "lib",
+    });
+  });
+
+  it("rejects a window with only one bound", () => {
+    expect(SeatQuerySchema.safeParse({ from }).success).toBe(false);
+    expect(RoomQuerySchema.safeParse({ to }).success).toBe(false);
+  });
+
+  it("rejects an empty or inverted window, comparing instants not strings", () => {
+    expect(SeatQuerySchema.safeParse({ from, to: from }).success).toBe(false);
+    // 10:00+08:00 is 02:00Z: an earlier instant although the string sorts later.
+    expect(SeatQuerySchema.safeParse({ from: to, to: "2026-11-10T10:00:00+08:00" }).success).toBe(
+      false,
+    );
+    expect(SeatQuerySchema.safeParse({ from: "2026-11-10T09:00:00+08:00", to }).success).toBe(true);
+  });
+
+  it("rejects a window wider than a day", () => {
+    expect(SeatQuerySchema.safeParse({ from, to: "2026-11-11T02:00:00.000Z" }).success).toBe(true);
+    expect(SeatQuerySchema.safeParse({ from, to: "2026-11-11T02:00:01.000Z" }).success).toBe(false);
+  });
+
+  it("rejects malformed instants", () => {
+    expect(SeatQuerySchema.safeParse({ from: "2026-11-10", to }).success).toBe(false);
+  });
+});
+
 describe("RoomQuerySchema", () => {
   it("trims keyword and drops empty strings", () => {
     expect(RoomQuerySchema.parse({ keyword: "  图书馆 " })).toEqual({ keyword: "图书馆" });

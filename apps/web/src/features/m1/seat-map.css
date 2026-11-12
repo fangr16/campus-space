@@ -1,20 +1,28 @@
-/* Floor plan (REQ-M1-10). All SVG geometry is in grid units, so stroke widths and font sizes
-   are fractions of a unit; the viewBox scales them with the container. */
+/* Floor plan (REQ-M1-10, REQ-M1-11). All SVG geometry is in grid units, so stroke widths and
+   font sizes are fractions of a unit; the viewBox scales them with the SVG's pixel width. */
 
 .seat-map {
   margin: 0;
   display: grid;
   gap: var(--space-3);
+  min-width: 0;
 }
 
-.seat-map__svg {
-  width: 100%;
-  height: auto;
-  display: block;
-  background: var(--color-surface);
+/* The SVG may be wider than the viewport (phones, zoom); the viewport scrolls, the page never does. */
+.seat-map__viewport {
+  overflow: auto;
+  max-height: min(70vh, 640px);
   border: 1px solid var(--color-line);
   border-radius: var(--radius-md);
   box-shadow: var(--shadow-card);
+  background: var(--color-surface);
+  overscroll-behavior: contain;
+}
+
+.seat-map__svg {
+  height: auto;
+  display: block;
+  margin: 0 auto;
   font-family: var(--font-mono);
 }
 
@@ -34,31 +42,7 @@
   stroke-dasharray: 0.25 0.18;
 }
 
-.seat-map__seat rect {
-  fill: var(--color-surface);
-  stroke: var(--color-ink-soft);
-  stroke-width: 0.06;
-  transition: fill var(--duration-fast) var(--ease-out);
-}
-
-.seat-map__seat[data-power="true"] rect {
-  fill: oklch(96% 0.05 70);
-  stroke: var(--color-power);
-  stroke-width: 0.1;
-}
-
-.seat-map__seat text {
-  font-size: 0.5px;
-  fill: var(--color-ink);
-  text-anchor: middle;
-  dominant-baseline: central;
-  pointer-events: none;
-}
-
-.seat-map__seat:hover rect {
-  fill: var(--color-accent-soft);
-}
-
+/* ---- outlets ---- */
 .seat-map__outlet circle {
   fill: var(--color-power);
   stroke: var(--color-surface);
@@ -72,10 +56,88 @@
   pointer-events: none;
 }
 
+/* ---- seat states ---- */
+.seat-map__seat rect {
+  fill: var(--color-surface);
+  stroke: var(--color-ink-soft);
+  stroke-width: 0.06;
+  transition: fill var(--duration-fast) var(--ease-out);
+}
+
+.seat-map__seat text {
+  font-size: 0.5px;
+  fill: var(--color-ink);
+  text-anchor: middle;
+  dominant-baseline: central;
+  pointer-events: none;
+}
+
+.seat-map__seat[data-power="true"] rect {
+  stroke: var(--color-power);
+  stroke-width: 0.1;
+}
+
+.seat-map__seat[data-state="RESERVED"] rect {
+  fill: var(--color-line);
+  stroke: var(--color-line);
+}
+
+.seat-map__seat[data-state="RESERVED"] text,
+.seat-map__seat[data-state="BLOCKED"] text {
+  fill: var(--color-ink-soft);
+}
+
+.seat-map__seat[data-state="BLOCKED"] rect {
+  fill: oklch(92% 0.02 25);
+  stroke: var(--color-accent-soft);
+  stroke-dasharray: 0.12 0.08;
+}
+
+.seat-map__seat[data-state="MINE"] rect {
+  fill: var(--color-accent);
+  stroke: var(--color-accent);
+}
+
+.seat-map__seat[data-state="MINE"] text {
+  fill: var(--color-surface);
+  font-weight: 700;
+}
+
+/* Chrome outlines a focused SVG group with a 5px auto ring; the hover/focus rule below draws
+   the ring on the seat's rect instead. */
+.seat-map__seat {
+  outline: none;
+}
+
+.seat-map__seat[role="button"] {
+  cursor: pointer;
+}
+
+.seat-map__seat[aria-disabled="true"] {
+  cursor: not-allowed;
+}
+
+.seat-map__seat[data-selected="true"] rect {
+  stroke: var(--color-ink);
+  stroke-width: 0.16;
+}
+
+/* Specificity rises from here on: free+power fill, then the hover ring on top. */
+.seat-map__seat[data-state="FREE"][data-power="true"] rect {
+  fill: oklch(96% 0.05 70);
+}
+
+.seat-map__seat[role="button"]:hover rect,
+.seat-map__seat[role="button"]:focus-visible rect {
+  stroke: var(--color-accent);
+  stroke-width: 0.14;
+}
+
+/* ---- legend ---- */
 .seat-map__legend {
   display: flex;
   flex-wrap: wrap;
-  gap: var(--space-4);
+  gap: var(--space-2) var(--space-4);
   font-size: var(--text-sm);
   color: var(--color-ink-soft);
 }
@@ -90,6 +152,21 @@
   background: var(--color-surface);
 }
 
+.seat-map__swatch[data-kind="mine"] {
+  background: var(--color-accent);
+  border-color: var(--color-accent);
+}
+
+.seat-map__swatch[data-kind="reserved"] {
+  background: var(--color-line);
+  border-color: var(--color-line);
+}
+
+.seat-map__swatch[data-kind="blocked"] {
+  background: oklch(92% 0.02 25);
+  border: 1px dashed var(--color-accent);
+}
+
 .seat-map__swatch[data-kind="powered"] {
   background: oklch(96% 0.05 70);
   border-color: var(--color-power);
@@ -99,4 +176,276 @@
   border-radius: 50%;
   background: var(--color-power);
   border-color: var(--color-power);
+}
+
+/* ---- time bar ---- */
+.time-bar {
+  min-width: 0;
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--space-3) var(--space-4);
+  padding: var(--space-3) var(--space-4);
+  margin-bottom: var(--space-4);
+  background: var(--color-surface);
+  border: 1px solid var(--color-line);
+  border-left: 4px solid var(--color-accent);
+  border-radius: var(--radius-md);
+}
+
+.time-bar__field {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--space-2);
+  font-size: var(--text-sm);
+  color: var(--color-ink-soft);
+}
+
+.time-bar__field .ant-select {
+  min-width: 6.5em;
+}
+
+.selection-card .time-bar__field {
+  display: flex;
+}
+
+/* ---- toolbar above the map ---- */
+.seats-toolbar {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--space-3);
+  margin-bottom: var(--space-3);
+}
+
+.seats-toolbar__controls {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--space-2);
+}
+
+.seats-toolbar__zoom {
+  display: inline-flex;
+  gap: var(--space-1);
+}
+
+.seats-page__held {
+  margin: 0 0 var(--space-3);
+  padding: var(--space-2) var(--space-3);
+  border-radius: var(--radius-sm);
+  background: var(--color-accent-soft);
+  color: var(--color-ink);
+  font-size: var(--text-sm);
+}
+
+/* ---- map + selection card ---- */
+.seats-layout {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr);
+  gap: var(--space-4);
+  align-items: start;
+}
+
+.seats-layout[data-selected="true"] {
+  grid-template-columns: minmax(0, 1fr) 280px;
+}
+
+.selection-card {
+  position: sticky;
+  top: var(--space-4);
+  display: grid;
+  gap: var(--space-3);
+  padding: var(--space-4);
+  background: var(--color-surface);
+  border: 1px solid var(--color-accent);
+  border-radius: var(--radius-md);
+  box-shadow: var(--shadow-card);
+}
+
+.selection-card__head {
+  display: grid;
+  grid-template-columns: auto 1fr auto;
+  align-items: center;
+  gap: var(--space-3);
+}
+
+.selection-card__seat {
+  font-family: var(--font-mono);
+  font-size: var(--text-display);
+  font-weight: 700;
+  line-height: 1;
+  color: var(--color-accent);
+}
+
+.selection-card__room {
+  display: grid;
+  font-weight: 600;
+}
+
+.selection-card__room small {
+  font-weight: 400;
+  color: var(--color-ink-soft);
+}
+
+.selection-card__meta {
+  margin: 0;
+  font-size: var(--text-sm);
+  color: var(--color-ink-soft);
+}
+
+/* ---- list view ---- */
+.seat-list {
+  display: grid;
+  gap: var(--space-4);
+}
+
+.seat-list__title {
+  margin: 0 0 var(--space-2);
+  font-size: var(--text-base);
+}
+
+.seat-list__title small {
+  margin-left: var(--space-1);
+  font-weight: 400;
+  color: var(--color-ink-soft);
+}
+
+.seat-list__items {
+  display: grid;
+  gap: var(--space-1);
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.seat-list__item {
+  display: grid;
+  grid-template-columns: 3em 1fr auto;
+  align-items: center;
+  gap: var(--space-3);
+  min-height: 44px;
+  padding: var(--space-1) var(--space-3);
+  background: var(--color-surface);
+  border: 1px solid var(--color-line);
+  border-radius: var(--radius-sm);
+}
+
+.seat-list__item[data-state="MINE"] {
+  border-color: var(--color-accent);
+}
+
+.seat-list__item[data-state="RESERVED"],
+.seat-list__item[data-state="BLOCKED"] {
+  color: var(--color-ink-soft);
+  background: var(--color-surface-muted);
+}
+
+.seat-list__code {
+  font-family: var(--font-mono);
+  font-weight: 700;
+}
+
+.seat-list__meta {
+  font-size: var(--text-sm);
+}
+
+/* Stale plan or list while a new start loads (RoomSeatsPage keeps the previous data). */ .seats-layout[data-loading="true"]
+  .seat-map,
+.seats-layout[data-loading="true"] .seat-list {
+  opacity: 0.5;
+  transition: opacity var(--duration-fast) var(--ease-out);
+}
+
+/* ---- my reservations ---- */
+.reservations__title {
+  margin: 0 0 var(--space-3);
+  font-size: var(--text-lg);
+}
+
+.reservations__title small {
+  margin-left: var(--space-1);
+  font-size: var(--text-sm);
+  font-weight: 400;
+  color: var(--color-ink-soft);
+}
+
+.reservation-cards {
+  display: grid;
+  gap: var(--space-3);
+  margin: 0 0 var(--space-6);
+  padding: 0;
+  list-style: none;
+}
+
+.reservation-card {
+  display: grid;
+  grid-template-columns: auto 1fr auto;
+  align-items: center;
+  gap: var(--space-4);
+  padding: var(--space-3) var(--space-4);
+  background: var(--color-surface);
+  border: 1px solid var(--color-line);
+  border-left: 4px solid var(--color-accent);
+  border-radius: var(--radius-md);
+  box-shadow: var(--shadow-card);
+}
+
+.reservation-card__seat {
+  font-family: var(--font-mono);
+  font-size: var(--text-display);
+  font-weight: 700;
+  line-height: 1;
+  color: var(--color-accent);
+}
+
+.reservation-card__body {
+  display: grid;
+  gap: 2px;
+}
+
+.reservation-card__body small {
+  color: var(--color-ink-soft);
+}
+
+.reservations-history {
+  padding: var(--space-3) var(--space-4);
+  border: 1px dashed var(--color-line);
+  border-radius: var(--radius-md);
+}
+
+.reservations-history summary {
+  cursor: pointer;
+}
+
+/* ---- phones ---- */
+@media (max-width: 768px) {
+  .time-bar__days {
+    width: 100%;
+    overflow-x: auto;
+  }
+
+  .seats-layout[data-selected="true"] {
+    grid-template-columns: minmax(0, 1fr);
+    padding-bottom: 180px;
+  }
+
+  .selection-card {
+    position: fixed;
+    inset: auto 0 0 0;
+    z-index: 20;
+    border-radius: var(--radius-md) var(--radius-md) 0 0;
+    border-width: 1px 0 0;
+    box-shadow: 0 -8px 24px -12px oklch(0% 0 0 / 0.3);
+  }
+
+  .reservation-card {
+    grid-template-columns: auto 1fr;
+  }
+
+  .reservation-card > :last-child {
+    grid-column: 2;
+    justify-self: start;
+  }
 }

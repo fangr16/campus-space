@@ -83,9 +83,69 @@ a {
   font-weight: 600;
 }
 
+.shell__session {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--space-3);
+}
+
 .shell__user {
   font-size: var(--text-sm);
   color: var(--color-ink-soft);
+}
+
+/* Phones: brand and session on one row, the module nav scrolls on the next. */
+@media (max-width: 768px) {
+  .shell__header {
+    display: grid;
+    grid-template-columns: 1fr auto;
+    gap: var(--space-2) var(--space-3);
+    padding: var(--space-2) var(--space-4);
+  }
+
+  .shell__brand small,
+  .shell__roles,
+  .shell__nav-module {
+    display: none;
+  }
+
+  .shell__brand {
+    grid-row: 1;
+    grid-column: 1;
+  }
+
+  .shell__session {
+    grid-row: 1;
+    grid-column: 2;
+  }
+
+  .shell__nav {
+    grid-row: 2;
+    grid-column: 1 / -1;
+    margin-left: 0;
+    overflow-x: auto;
+    white-space: nowrap;
+    scrollbar-width: none;
+  }
+
+  .shell__nav a {
+    flex: 0 0 auto;
+    border: 1px solid var(--color-line);
+    border-radius: 999px;
+  }
+
+  .shell__main {
+    width: min(1120px, 100% - var(--space-8));
+    padding-top: var(--space-4);
+  }
+
+  .page__title {
+    font-size: 1.5rem;
+  }
+
+  .page__head .rooms-search {
+    width: 100%;
+  }
 }
 
 .shell__main {
@@ -184,6 +244,25 @@ a {
   font-weight: 600;
 }
 
+.room-card__free {
+  font-size: var(--text-sm);
+  color: var(--color-ink-soft);
+}
+
+.room-card__free strong {
+  font-family: var(--font-mono);
+  font-size: var(--text-lg);
+  color: var(--color-ok);
+}
+
+.room-card__free[data-empty="true"] strong {
+  color: var(--color-accent);
+}
+
+.rooms-search {
+  width: 280px;
+}
+
 .room-card__meta {
   display: flex;
   justify-content: space-between;
@@ -200,44 +279,11 @@ a {
 }
 
 /* ---- seats ---- */
-.seat-grid {
-  display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(64px, 1fr));
-  gap: var(--space-2);
-  padding: 0;
-  margin: 0;
-  list-style: none;
-}
-
-.seat {
-  position: relative;
-  display: grid;
-  place-items: center;
-  aspect-ratio: 1;
-  border: 1px solid var(--color-line);
-  border-radius: var(--radius-sm);
-  background: var(--color-surface);
-  font-family: var(--font-mono);
-  font-size: var(--text-sm);
-}
-
-.seat[data-power="true"] {
-  border-color: var(--color-power);
-  background: linear-gradient(180deg, var(--color-surface), oklch(97% 0.03 70));
-}
-
-.seat[data-power="true"]::after {
-  content: "⚡";
-  position: absolute;
-  top: 2px;
-  right: 4px;
-  font-size: var(--text-xs);
-  color: var(--color-power);
-}
-
 .seat-legend {
   display: flex;
-  gap: var(--space-4);
+  flex-wrap: wrap;
+  gap: var(--space-2) var(--space-4);
+  margin: 0;
   font-size: var(--text-sm);
   color: var(--color-ink-soft);
 }

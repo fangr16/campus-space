@@ -8,7 +8,7 @@
 |---|---|---|---|---|
 | 单元 | `src/**/*.spec.ts` | `pnpm test`，lefthook pre-push，CI | 纯函数（状态机、可见性、时间规则）、service（仓储以接口 mock）、契约 schema、守卫 | 控制器、仓储、Prisma 服务、bootstrap |
 | 集成 | `src/**/*.int-spec.ts` | `pnpm test:integration`，CI | 整个 Nest 应用 + 真实 PostgreSQL（`<svc>_test` schema，每次 drop 后用 `prisma migrate deploy` 重放） | 其它服务（跨模块用内部令牌模拟调用方） |
-| 端到端 | `e2e/tests/*.spec.ts` | `pnpm e2e`，CI（部署测试环境后） | 浏览器里的关键路径：登录、自习室、座位筛选、占位页、版本页脚、退出 | 细节样式 |
+| 端到端 | `e2e/tests/*.spec.ts` | `pnpm e2e`，CI（部署测试环境后） | 浏览器里的关键路径：登录、自习室、座位筛选、时间优先预约与取消、占位页、版本页脚、退出；`mobile.spec.ts` 在 Pixel 7 视口跑手机端验收（REQ-M1-11） | 细节样式 |
 | 变异 | `stryker.config.mjs` | `pnpm mutation`，每次 Review 前 | 单元层能否杀死变异体 | 适配层 |
 | 契约 | contracts 的 spec + 前端 zod 校验 | 单元 / 运行时 | 字段、枚举、强制转换 | — |
 
@@ -23,6 +23,9 @@
 - 单元测试自己构造数据，不依赖种子。
 - 集成测试在 `beforeAll` 里用 Prisma 直接插入所需行；每个服务独立 `<svc>_test` schema，`fileParallelism: false`。
 - e2e 依赖种子（`pnpm db:seed`）：账号 `student / Campus@2026`、房间 `LIB-301`（40 座，10 座带插座）。改种子要同步改 e2e 断言。
+- e2e 固定单 worker（`workers: 1`）：所有文件用同一个学生账号和同一个库，并行会互相取消预约。另有 `warmup.setup.ts` 先访问全部页面：冷启动的 Vite 在测试中途做依赖优化并整页刷新，曾让对话框消失（2026-11-05 实测）。
+- 预约类 e2e 开始前通过接口取消该账号全部未来预约，保证可重复运行；历史的已取消记录和正在进行（不可取消）的预约会留在列表里，断言要针对取消按钮而不是卡片或行。
+- 预约类 e2e 一律选"明天"，这样无论几点跑，开始时间都在未来；时长由选择卡按座位给出，测试不指定。
 
 ## 定时任务与时间
 

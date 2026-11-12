@@ -17,7 +17,7 @@ import { RoomsService } from "./rooms.service";
 export class RoomsController {
   constructor(private readonly rooms: RoomsService) {}
 
-  /** GET /api/m1/rooms?building=&keyword= */
+  /** GET /api/m1/rooms?building=&keyword=&from=&to= */
   @Get()
   list(
     @CurrentUser() user: JwtPayload,
@@ -26,7 +26,7 @@ export class RoomsController {
     return this.rooms.listRooms(user, query);
   }
 
-  /** GET /api/m1/rooms/:id/seats?hasPower=true */
+  /** GET /api/m1/rooms/:id/seats?hasPower=true&from=&to= */
   @Get(":id/seats")
   seats(
     @CurrentUser() user: JwtPayload,

@@ -25,7 +25,7 @@ test.describe("campus-space smoke", () => {
   }) => {
     await login(page, STUDENT.username, STUDENT.password);
 
-    await expect(page).toHaveURL(/\/m1\/rooms$/);
+    await expect(page).toHaveURL(/\/m1\/rooms/);
     await expect(page.getByRole("heading", { level: 1, name: "自习室" })).toBeVisible();
     const lib = page.locator('[data-room-code="LIB-301"]');
     await expect(lib).toBeVisible();

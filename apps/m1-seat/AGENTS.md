@@ -8,6 +8,8 @@ modules copy: migration → seed → repository → service → controller → u
 
 - `rooms/` room and seat master data, search, visibility and the floor plan (REQ-M1-02,
   07, 09, 10). `seat-power.ts` derives power availability from outlets; never store it.
+  `seat-availability.ts` computes per-seat state for a `from`/`to` window (REQ-M1-11,
+  ADR-0010): MINE > BLOCKED > RESERVED at `from`, else FREE with `freeUntil`.
 - `reservations/` booking and cancellation (REQ-M1-04); rules are pure functions in
   `reservation-rules.ts`, the clock is injected (`CLOCK`). `settings/` holds module parameters.
 - Planned: check-in and no-show (REQ-M1-05, 06), `seat-status/` internal endpoints that M2

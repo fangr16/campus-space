@@ -14,7 +14,10 @@ const service = (name: string, dir: string, port: number) => ({
 
 export default defineConfig({
   testDir: "./tests",
+  // Every file logs in as the same seeded student and writes to one database, so files must
+  // not run concurrently: a parallel worker would cancel or collide with data of another file.
   fullyParallel: false,
+  workers: 1,
   retries: process.env.CI ? 1 : 0,
   reporter: process.env.CI ? [["list"], ["html", { open: "never" }]] : [["list"]],
   use: {
@@ -23,7 +26,22 @@ export default defineConfig({
     screenshot: "only-on-failure",
     locale: "zh-CN",
   },
-  projects: [{ name: "chromium", use: { ...devices["Desktop Chrome"] } }],
+  projects: [
+    { name: "warmup", testMatch: /warmup.setup.ts/ },
+    {
+      name: "chromium",
+      dependencies: ["warmup"],
+      testIgnore: [/warmup.setup.ts/, /mobile.spec.ts/],
+      use: { ...devices["Desktop Chrome"] },
+    },
+    // Phone viewport for the REQ-M1-11 small-screen checks; Chromium-based so no extra browser install.
+    {
+      name: "mobile",
+      dependencies: ["warmup"],
+      testMatch: /mobile.spec.ts/,
+      use: { ...devices["Pixel 7"] },
+    },
+  ],
   webServer: process.env.E2E_BASE_URL
     ? undefined
     : [

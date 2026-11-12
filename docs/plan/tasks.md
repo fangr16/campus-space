@@ -11,7 +11,7 @@
 | TASK-003 | 填写 `docs/team.md` 姓名、评审节点日期 | — | 组长 | — | 待领 |
 | TASK-004 | 华为云：2 台 ECS、SWR 组织、代金券 | — | 平台 | — | 待领 |
 | TASK-005 | 每位组员本机跑通 `pnpm install && pnpm verify && pnpm test && pnpm db:up && pnpm db:migrate && pnpm db:seed && pnpm dev` | — | 全员 | — | 待领 |
-| TASK-010 | M1 预约：创建/取消，整点、≤ 4h 参数化、开放时间与冲突校验（MR A 接口；MR B 前端） | REQ-M1-04 | 组长 | TASK-005 | 评审中（MR A） |
+| TASK-010 | M1 预约：创建/取消，整点、≤ 4h 参数化、开放时间与冲突校验（MR A 接口；MR B 前端） | REQ-M1-04 | 组长 | TASK-005 | 评审中（MR A + MR B 同分支） |
 | TASK-011 | M1 签到：每日动态编码与 Web 录入 | REQ-M1-05 | 模块组 1 | TASK-010 | 待领 |
 | TASK-012 | M1 提醒与违约定时任务（可注入时钟） | REQ-M1-06、REQ-D3-01 | 模块组 1 | TASK-010、TASK-042 | 待领 |
 | TASK-013 | M1 历史与再次预约 | REQ-M1-07 | 模块组 1 | TASK-010 | 待领 |
@@ -40,6 +40,7 @@
 | TASK-053 | 每个服务使用独立的数据库角色，仅授权自己的 schema | — | 平台 | TASK-050 | 待领 |
 | TASK-017 | 座位平面图数据模型与接口：坐标、插座实体、推导电源、契约、ADR-0007 | REQ-M1-10、REQ-M1-09 | 组长 | — | 完成 |
 | TASK-018 | 座位平面图前端：SVG 平面图、插座覆盖圈、覆盖座位高亮、e2e | REQ-M1-10 | 组长 | TASK-017 | 评审中 |
+| TASK-019 | M1 预约交互重做：时间优先、按时段上色的平面图、选择卡、手机端缩放与列表视图、我的预约分组、ADR-0010（组长决定合成一个 MR） | REQ-M1-11 | 组长 | TASK-010、TASK-018 | 评审中 |
 | TASK-016 | M1 自习室列表分页 | REQ-M1-07 | 模块组 1 | — | 待领 |
 | TASK-045 | 前端令牌改为 httpOnly Cookie，去掉 localStorage | REQ-D1-02 | 平台 | TASK-044 | 待领 |
 | TASK-060 | 每次 Review 前跑 Stryker 并更新 `mutation-log.md` | — | 质量 | — | 待领 |
