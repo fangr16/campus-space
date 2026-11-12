@@ -1,7 +1,8 @@
-import { CurrentUser } from "@campus/auth";
+import { CurrentUser, Internal } from "@campus/auth";
 import {
   type JwtPayload,
   type RoomDto,
+  type RoomLookup,
   type RoomQuery,
   RoomQuerySchema,
   type RoomSeatsResponse,
@@ -16,6 +17,13 @@ import { RoomsService } from "./rooms.service";
 @Controller("rooms")
 export class RoomsController {
   constructor(private readonly rooms: RoomsService) {}
+
+  /** Internal master-data lookup for M2/M3; never trusts a caller-supplied user. */
+  @Internal()
+  @Get("internal/:id/lookup")
+  lookup(@Param("id") id: string): Promise<RoomLookup> {
+    return this.rooms.lookup(id);
+  }
 
   /** GET /api/m1/rooms?building=&keyword=&from=&to= */
   @Get()

@@ -39,6 +39,7 @@ model RepairTicket {
   reporterId  String
   category    String
   description String
+  photoRef    String?
   status      TicketStatus   @default(REPORTED)
   priority    TicketPriority @default(NORMAL)
   assigneeId  String?

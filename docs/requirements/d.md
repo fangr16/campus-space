@@ -9,7 +9,7 @@
 | REQ-D1-03 | 身份与权限 | 服务间调用使用内部令牌 | 带正确 `x-internal-token` 的请求可访问 `@Internal` 接口，且不被当作用户 | 已实现 | `packages/auth/src/jwt-auth.guard.ts` | `jwt-auth.guard.spec.ts › internal token` |
 | REQ-D1-04 | 身份与权限 | 角色与细粒度权限可配置（支撑 REQ-M1-01/03） | 管理员维护角色-权限矩阵；服务可查询某用户是否拥有某权限 | 未开始（表已建） | `apps/platform/prisma/schema.prisma` | |
 | REQ-D2-01 | 空间与座位主数据 | 自习室、座位、开放时间、插座标记的登记与注销 | 管理员 CRUD；注销后不再出现在列表 | 降级实现（只读接口 + 种子） | `apps/m1-seat/src/rooms/` | `rooms.int-spec.ts` |
-| REQ-D2-02 | 空间与座位主数据 | 主数据以只读接口供 M2/M3 校验 `roomId` | `GET /api/m1/rooms/:id` 对内部令牌可用 | 未开始 | | |
+| REQ-D2-02 | 空间与座位主数据 | 主数据以只读接口供 M2/M3 校验 `roomId` | `GET /api/m1/rooms/internal/:id/lookup` 仅接受内部令牌；有效房间返回房间 id 与有效座位 id，不存在的房间返回 404 | 进行中（接口已实现，待评审） | `apps/m1-seat/src/rooms/` | `rooms.int-spec.ts` |
 | REQ-D3-01 | 通知服务 | 站内消息单渠道，模板化，幂等 | 同一事件重复投递只产生一条消息；用户可读未读 | 未开始 | `apps/platform/src/notifications/`（待建） | |
 | REQ-D3-02 | 通知服务 | 三个模块的提醒都通过 D-3（X-4） | M1 提醒、M2 审批结果、M3 派单/升级均可在消息中心看到 | 未开始 | | |
 | REQ-D4-01 | 操作审计 | 记录谁/何时/对什么/做了什么/结果 | 每条跨模块写回与审批、派单操作有审计行 | 未开始 | `apps/platform/src/audit/`（待建） | |

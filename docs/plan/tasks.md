@@ -23,8 +23,8 @@
 | TASK-023 | M2 超时撤销定时任务 | REQ-M2-04 | 模块组 2 | TASK-022 | 待领 |
 | TASK-024 | M2 → M1 写回（调用 TASK-015） | REQ-X-02 | 模块组 2 | TASK-015、TASK-022 | 待领 |
 | TASK-025 | M2 前端 | REQ-M2-02、05 | 模块组 2 | TASK-021 | 待领 |
-| TASK-030 | M3 AI 需求细化会话并更新 `requirements/m3.md` | REQ-M3-* | 模块组 3 | — | 评审中 |
-| TASK-031 | M3 上报与派单 | REQ-M3-01、02 | 模块组 3 | TASK-030 | 待领 |
+| TASK-030 | M3 AI 需求细化会话并更新 `requirements/m3.md` | REQ-M3-* | 模块组 3 | — | 完成 |
+| TASK-031 | M3 上报与派单 | REQ-M3-01、02 | 模块组 3 | TASK-030 | 评审中 |
 | TASK-032 | M3 状态流转接口与事件表 | REQ-M3-03 | 模块组 3 | TASK-031 | 待领 |
 | TASK-033 | M3 SLA 升级定时任务 | REQ-M3-04 | 模块组 3 | TASK-032 | 待领 |
 | TASK-034 | M3 → M1 写回（调用 TASK-015） | REQ-X-01 | 模块组 3 | TASK-015、TASK-032 | 待领 |
