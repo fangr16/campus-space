@@ -32,7 +32,7 @@ REQ-M3-05 要求上报人验收 `DONE` 工单：通过时给出 1～5 分评分�
 - 新增迁移与 schema 列，属 schema 变更，需两名人工评审；`generated/prisma` 不提交。
 - 契约新增 `AcceptTicketRequest`、`RejectTicketRequest` 与 DTO 的 `rating` 字段，需两名评审人。
 - 事件 `note` 字段被复用为评分与原因的载体，前端展示需同时处理两种语义。
-- 前端替换 M3 占位页仍在进行，本 MR 只交付接口。
+- 前端替换 M3 占位页由同一任务的前端变更交付，含上报表单、工单列表、事件历史与验收/返工操作。
 
 ## 验证
 
