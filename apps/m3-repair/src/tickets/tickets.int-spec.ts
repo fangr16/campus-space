@@ -11,9 +11,9 @@ import { PrismaService } from "../prisma/prisma.service";
 
 const options = { jwtSecret: "int-secret-0123456789", internalToken: "int-token", expiresIn: "1h" };
 const jwt = new JwtService({ secret: options.jwtSecret });
-const token = (role: Role) =>
+const token = (role: Role, sub = `user-${role}`) =>
   jwt.sign({
-    sub: `user-${role}`,
+    sub,
     username: role,
     displayName: role,
     roles: [role],
@@ -195,5 +195,134 @@ describe("report and dispatch", () => {
     expect(await prisma.ticketEvent.findMany({ where: { ticketId: ticket.id } })).toMatchObject([
       { fromStatus: "ESCALATED", toStatus: "DISPATCHED", actorId: "user-maintainer" },
     ]);
+  });
+});
+
+describe("repair progress and event history", () => {
+  it("allows only the assigned maintainer to start and complete a ticket", async () => {
+    const created = await request(app.getHttpServer())
+      .post("/api/m3/tickets")
+      .set("authorization", `Bearer ${token(Role.STUDENT)}`)
+      .send(report)
+      .expect(201);
+    const id = created.body.data.id as string;
+    await request(app.getHttpServer())
+      .post(`/api/m3/tickets/${id}/dispatch`)
+      .set("authorization", `Bearer ${token(Role.ADMIN)}`)
+      .send({ assigneeId: "worker", priority: "HIGH", slaDueAt: due })
+      .expect(201);
+
+    await request(app.getHttpServer())
+      .post(`/api/m3/tickets/${id}/start`)
+      .set("authorization", `Bearer ${token(Role.STUDENT)}`)
+      .expect(403);
+    await request(app.getHttpServer())
+      .post(`/api/m3/tickets/${id}/start`)
+      .set("authorization", `Bearer ${token(Role.MAINTAINER)}`)
+      .expect(403);
+    await request(app.getHttpServer())
+      .post("/api/m3/tickets/missing/start")
+      .set("authorization", `Bearer ${token(Role.MAINTAINER, "worker")}`)
+      .expect(404);
+    await request(app.getHttpServer())
+      .post(`/api/m3/tickets/${id}/complete`)
+      .set("authorization", `Bearer ${token(Role.MAINTAINER, "worker")}`)
+      .expect(409);
+    expect(await prisma.ticketEvent.count({ where: { ticketId: id } })).toBe(2);
+
+    const started = await request(app.getHttpServer())
+      .post(`/api/m3/tickets/${id}/start`)
+      .set("authorization", `Bearer ${token(Role.MAINTAINER, "worker")}`)
+      .expect(201);
+    expect(started.body.data.status).toBe("IN_PROGRESS");
+    await request(app.getHttpServer())
+      .post(`/api/m3/tickets/${id}/start`)
+      .set("authorization", `Bearer ${token(Role.MAINTAINER, "worker")}`)
+      .expect(409);
+    const completed = await request(app.getHttpServer())
+      .post(`/api/m3/tickets/${id}/complete`)
+      .set("authorization", `Bearer ${token(Role.MAINTAINER, "worker")}`)
+      .expect(201);
+    expect(completed.body.data.status).toBe("DONE");
+    await request(app.getHttpServer())
+      .post(`/api/m3/tickets/${id}/complete`)
+      .set("authorization", `Bearer ${token(Role.MAINTAINER, "worker")}`)
+      .expect(409);
+    expect(await prisma.repairTicket.findUniqueOrThrow({ where: { id } })).toMatchObject({
+      status: "DONE",
+      assigneeId: "worker",
+    });
+    expect(
+      await prisma.ticketEvent.findMany({ where: { ticketId: id }, orderBy: { createdAt: "asc" } }),
+    ).toMatchObject([
+      { fromStatus: null, toStatus: "REPORTED", actorId: "user-student" },
+      { fromStatus: "REPORTED", toStatus: "DISPATCHED", actorId: "user-admin" },
+      { fromStatus: "DISPATCHED", toStatus: "IN_PROGRESS", actorId: "worker" },
+      { fromStatus: "IN_PROGRESS", toStatus: "DONE", actorId: "worker" },
+    ]);
+    const history = await request(app.getHttpServer())
+      .get(`/api/m3/tickets/${id}/events`)
+      .set("authorization", `Bearer ${token(Role.STUDENT)}`)
+      .expect(200);
+    expect(history.body.data.map((event: { toStatus: string }) => event.toStatus)).toEqual([
+      "REPORTED",
+      "DISPATCHED",
+      "IN_PROGRESS",
+      "DONE",
+    ]);
+  });
+
+  it("resumes an escalated or reworked ticket using existing transitions", async () => {
+    for (const status of ["ESCALATED", "REWORK"] as const) {
+      const ticket = await prisma.repairTicket.create({
+        data: {
+          roomId: "room-1",
+          reporterId: "user-student",
+          category: "LIGHT",
+          description: "Still broken",
+          status,
+          assigneeId: "worker",
+        },
+      });
+      const response = await request(app.getHttpServer())
+        .post(`/api/m3/tickets/${ticket.id}/start`)
+        .set("authorization", `Bearer ${token(Role.MAINTAINER, "worker")}`)
+        .expect(201);
+      expect(response.body.data.status).toBe("IN_PROGRESS");
+      expect(await prisma.ticketEvent.findMany({ where: { ticketId: ticket.id } })).toMatchObject([
+        { fromStatus: status, toStatus: "IN_PROGRESS", actorId: "worker" },
+      ]);
+    }
+  });
+
+  it("limits event history to the reporter, assignee, and admin", async () => {
+    const ticket = await prisma.repairTicket.create({
+      data: {
+        roomId: "room-1",
+        reporterId: "user-student",
+        category: "LIGHT",
+        description: "Broken",
+        assigneeId: "worker",
+        events: { create: { toStatus: "REPORTED", actorId: "user-student" } },
+      },
+    });
+    for (const auth of [token(Role.STUDENT), token(Role.MAINTAINER, "worker"), token(Role.ADMIN)]) {
+      const response = await request(app.getHttpServer())
+        .get(`/api/m3/tickets/${ticket.id}/events`)
+        .set("authorization", `Bearer ${auth}`)
+        .expect(200);
+      expect(response.body.data).toMatchObject([
+        { ticketId: ticket.id, fromStatus: null, toStatus: "REPORTED" },
+      ]);
+      expect(response.body.data[0].createdAt).toEqual(expect.any(String));
+    }
+    await request(app.getHttpServer())
+      .get(`/api/m3/tickets/${ticket.id}/events`)
+      .set("authorization", `Bearer ${token(Role.STUDENT, "other")}`)
+      .expect(403);
+    await request(app.getHttpServer())
+      .get("/api/m3/tickets/missing/events")
+      .set("authorization", `Bearer ${token(Role.ADMIN)}`)
+      .expect(404);
   });
 });

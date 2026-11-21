@@ -23,6 +23,8 @@ function setup() {
   const tickets = {
     report: vi.fn().mockResolvedValue(ticket),
     dispatch: vi.fn().mockResolvedValue(ticket),
+    transition: vi.fn().mockResolvedValue(ticket),
+    events: vi.fn().mockResolvedValue([]),
   };
   return {
     service: new TicketsService(
@@ -105,5 +107,25 @@ describe("TicketsService", () => {
     } finally {
       clock.mockRestore();
     }
+  });
+
+  it("passes the caller and target state to the transition repository", async () => {
+    const { service, tickets } = setup();
+    expect(await service.transition(user, "ticket", "IN_PROGRESS")).toBe(ticket);
+    expect(await service.transition(user, "ticket", "DONE")).toBe(ticket);
+    expect(tickets.transition.mock.calls).toEqual([
+      ["ticket", "reporter", "IN_PROGRESS"],
+      ["ticket", "reporter", "DONE"],
+    ]);
+  });
+
+  it("grants admin history access while keeping the caller identity", async () => {
+    const { service, tickets } = setup();
+    await service.events(user, "ticket");
+    await service.events({ ...user, roles: ["admin"] }, "ticket");
+    expect(tickets.events.mock.calls).toEqual([
+      ["ticket", "reporter", false],
+      ["ticket", "reporter", true],
+    ]);
   });
 });

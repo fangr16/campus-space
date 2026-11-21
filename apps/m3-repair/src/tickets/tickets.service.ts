@@ -1,8 +1,10 @@
-import type {
-  DispatchTicketRequest,
-  JwtPayload,
-  RepairTicketDto,
-  ReportTicketRequest,
+import {
+  type DispatchTicketRequest,
+  type JwtPayload,
+  type RepairTicketDto,
+  type ReportTicketRequest,
+  Role,
+  type TicketEventDto,
 } from "@campus/contracts";
 import { BadGatewayException, BadRequestException, Injectable } from "@nestjs/common";
 import { MasterDataRepository } from "./master-data.repository";
@@ -43,5 +45,17 @@ export class TicketsService {
       input.priority,
       new Date(input.slaDueAt),
     );
+  }
+
+  transition(
+    user: JwtPayload,
+    id: string,
+    toStatus: "IN_PROGRESS" | "DONE",
+  ): Promise<RepairTicketDto> {
+    return this.tickets.transition(id, user.sub, toStatus);
+  }
+
+  events(user: JwtPayload, id: string): Promise<TicketEventDto[]> {
+    return this.tickets.events(id, user.sub, user.roles.includes(Role.ADMIN));
   }
 }
