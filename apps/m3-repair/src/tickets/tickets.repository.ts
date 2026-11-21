@@ -7,15 +7,26 @@ import type {
 import {
   ConflictException,
   ForbiddenException,
+  Inject,
   Injectable,
   NotFoundException,
 } from "@nestjs/common";
+import { CLOCK, type Clock } from "../clock";
 import { PrismaService } from "../prisma/prisma.service";
+import { SEAT_BLOCKER, type SeatBlocker } from "./seat-blocker";
 import { assertTransition } from "./ticket-status";
+
+const REPAIR_SOURCE = "M3_REPAIR" as const;
+/** Repair blocks are open-ended: release is driven by ACCEPTED, not by a deadline. */
+const OPEN_ENDED = "2099-12-31T23:59:59.999Z";
 
 @Injectable()
 export class TicketsRepository {
-  constructor(private readonly prisma: PrismaService) {}
+  constructor(
+    private readonly prisma: PrismaService,
+    @Inject(CLOCK) private readonly clock: Clock,
+    @Inject(SEAT_BLOCKER) private readonly blocker: SeatBlocker,
+  ) {}
 
   async report(input: ReportTicketRequest, reporterId: string): Promise<RepairTicketDto> {
     const ticket = await this.prisma.repairTicket.create({
@@ -77,6 +88,16 @@ export class TicketsRepository {
       await tx.ticketEvent.create({
         data: { ticketId: id, fromStatus: current.status, toStatus, actorId },
       });
+      if (toStatus === "IN_PROGRESS") {
+        await this.blocker.block({
+          roomId: current.roomId,
+          source: REPAIR_SOURCE,
+          refId: id,
+          from: this.clock.now().toISOString(),
+          to: OPEN_ENDED,
+          reason: "维修中，整室座位下架",
+        });
+      }
       return toDto(await tx.repairTicket.findUniqueOrThrow({ where: { id } }));
     });
   }
@@ -106,6 +127,11 @@ export class TicketsRepository {
           actorId: reporterId,
           note: `评分：${rating}`,
         },
+      });
+      await this.blocker.release({
+        roomId: current.roomId,
+        source: REPAIR_SOURCE,
+        refId: id,
       });
       return toDto(await tx.repairTicket.findUniqueOrThrow({ where: { id } }));
     });

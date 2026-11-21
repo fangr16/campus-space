@@ -47,6 +47,7 @@ Related: REQ-xx / TASK-xx / 其他 ADR
 | ADR-0011 | [M3 报修通过内部只读接口校验主数据](implemented/2026-11-12-m3-master-data-validation.md) | implemented |
 | ADR-0012 | [M3 维修进度使用明确操作接口](implemented/2026-11-12-m3-progress-actions.md) | implemented |
 | ADR-0014 | [M3 验收评分与返工原因的记录方式](implemented/2026-11-21-m3-acceptance-rating.md) | implemented |
+| ADR-0015 | [M3 向 M1 写回座位下架的触发与失败补偿](implemented/2026-11-21-m3-m1-writeback.md) | implemented |
 | ADR-0013 | [M3 SLA 超时升级的幂等与通知边界](implemented/2026-11-21-m3-sla-escalation.md) | implemented |
 
 > ADR-0002 到 0006 是组长在搭建 base repo 时做的启动决策，已随仓库落地，因此直接记为 implemented。任何组员可以提出新的 ADR 取代它们。

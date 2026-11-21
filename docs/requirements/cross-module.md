@@ -4,7 +4,7 @@
 
 | ID | 链路 | 要求 | 验收标准（现场可演示） | 状态 | 契约 |
 |---|---|---|---|---|---|
-| REQ-X-01 | M3 → M1 | 某自习室存在"维修中"工单时，该室全部座位自动从可预约列表下架；验收通过后自动恢复 | 工单进入 `IN_PROGRESS` 后，`GET /api/m1/rooms/:id/seats` 中座位带阻塞状态且预约被拒；`ACCEPTED` 后恢复。全程通过 HTTP，`seat_statuses.source = M3_REPAIR`，`refId = ticketId` | 未开始 | `RoomBlockRequest` / `RoomReleaseRequest`（`packages/contracts/src/events.ts`） |
+| REQ-X-01 | M3 → M1 | 某自习室存在"维修中"工单时，该室全部座位自动从可预约列表下架；验收通过后自动恢复 | 工单进入 `IN_PROGRESS` 后，`GET /api/m1/rooms/:id/seats` 中座位带阻塞状态且预约被拒；`ACCEPTED` 后恢复。全程通过 HTTP，`seat_statuses.source = M3_REPAIR`，`refId = ticketId` | 进行中（M3 侧已实现，待 M1 的 TASK-015 联调） | `RoomBlockRequest` / `RoomReleaseRequest`（`packages/contracts/src/events.ts`） |
 | REQ-X-02 | M2 → M1 | 整教室预约审批通过后，该室在时段内全部座位被占用；驳回或超时撤销后回滚 | 审批通过后时段内个人预约被拒；`REJECTED`/`EXPIRED`/`CANCELLED` 后可再预约；`source = M2_ROOM_BOOKING`，`refId = bookingId` | 未开始 | 同上 |
 | REQ-X-03 | 追溯 | M1 的座位状态必须记录写入来源 | `seat_statuses` 每行有 `source ∈ {M1_RESERVATION, M2_ROOM_BOOKING, M3_REPAIR}` 与 `refId`；按座位+时段可查到来源 | 已实现（schema 与契约） | `SeatStatusSource`（`seat-status.ts`）；`apps/m1-seat/prisma/schema.prisma` |
 | REQ-X-04 | 统一通知（补充） | 三个模块的提醒都走 D-3 | 消息中心能看到 M1/M2/M3 各一类通知 | 未开始 | 待定义 `NotificationRequest` |
