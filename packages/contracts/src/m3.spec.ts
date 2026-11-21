@@ -1,5 +1,11 @@
 import { describe, expect, it } from "vitest";
-import { DispatchTicketRequestSchema, ReportTicketRequestSchema, TicketEventDtoSchema } from "./m3";
+import {
+  AcceptTicketRequestSchema,
+  DispatchTicketRequestSchema,
+  RejectTicketRequestSchema,
+  ReportTicketRequestSchema,
+  TicketEventDtoSchema,
+} from "./m3";
 
 describe("M3 request contracts", () => {
   it("accepts a report without a seat or photo and trims its text", () => {
@@ -30,6 +36,17 @@ describe("M3 request contracts", () => {
         slaDueAt: "tomorrow",
       }).success,
     ).toBe(false);
+  });
+
+  it("accepts a 1-5 rating and a trimmed rework reason, rejecting invalid values", () => {
+    expect(AcceptTicketRequestSchema.parse({ rating: 5 })).toEqual({ rating: 5 });
+    expect(AcceptTicketRequestSchema.safeParse({ rating: 0 }).success).toBe(false);
+    expect(AcceptTicketRequestSchema.safeParse({ rating: 6 }).success).toBe(false);
+    expect(AcceptTicketRequestSchema.safeParse({ rating: 2.5 }).success).toBe(false);
+    expect(RejectTicketRequestSchema.parse({ reason: "  broken again  " })).toEqual({
+      reason: "broken again",
+    });
+    expect(RejectTicketRequestSchema.safeParse({ reason: " " }).success).toBe(false);
   });
 
   it("parses an event history entry with a UTC timestamp", () => {

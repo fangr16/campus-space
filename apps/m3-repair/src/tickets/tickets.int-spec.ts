@@ -326,3 +326,126 @@ describe("repair progress and event history", () => {
       .expect(404);
   });
 });
+
+describe("acceptance and rework", () => {
+  async function doneTicket(id: string) {
+    return prisma.repairTicket.create({
+      data: {
+        id,
+        roomId: "room-1",
+        reporterId: "user-student",
+        category: "LIGHT",
+        description: "fixed",
+        status: "DONE",
+        assigneeId: "worker",
+      },
+    });
+  }
+
+  it("accepts a DONE ticket with a rating and records the score in its event", async () => {
+    const ticket = await doneTicket("accept-1");
+    await request(app.getHttpServer())
+      .post(`/api/m3/tickets/${ticket.id}/accept`)
+      .set("authorization", `Bearer ${token(Role.STUDENT, "other")}`)
+      .send({ rating: 5 })
+      .expect(403);
+
+    const res = await request(app.getHttpServer())
+      .post(`/api/m3/tickets/${ticket.id}/accept`)
+      .set("authorization", `Bearer ${token(Role.STUDENT)}`)
+      .send({ rating: 5 })
+      .expect(201);
+    expect(res.body.data).toMatchObject({ status: "ACCEPTED", rating: 5 });
+    expect(await prisma.repairTicket.findUniqueOrThrow({ where: { id: ticket.id } })).toMatchObject(
+      {
+        status: "ACCEPTED",
+        rating: 5,
+      },
+    );
+    expect(await prisma.ticketEvent.findMany({ where: { ticketId: ticket.id } })).toMatchObject([
+      { fromStatus: "DONE", toStatus: "ACCEPTED", actorId: "user-student", note: "评分：5" },
+    ]);
+
+    await request(app.getHttpServer())
+      .post(`/api/m3/tickets/${ticket.id}/accept`)
+      .set("authorization", `Bearer ${token(Role.STUDENT)}`)
+      .send({ rating: 4 })
+      .expect(409);
+  });
+
+  it("rejects a DONE ticket with a reason and lets the maintainer repair it again", async () => {
+    const ticket = await doneTicket("reject-1");
+    await request(app.getHttpServer())
+      .post(`/api/m3/tickets/${ticket.id}/reject`)
+      .set("authorization", `Bearer ${token(Role.STUDENT, "other")}`)
+      .send({ reason: "still broken" })
+      .expect(403);
+
+    const rejected = await request(app.getHttpServer())
+      .post(`/api/m3/tickets/${ticket.id}/reject`)
+      .set("authorization", `Bearer ${token(Role.STUDENT)}`)
+      .send({ reason: "still broken" })
+      .expect(201);
+    expect(rejected.body.data).toMatchObject({ status: "REWORK" });
+    expect(await prisma.ticketEvent.findMany({ where: { ticketId: ticket.id } })).toMatchObject([
+      { fromStatus: "DONE", toStatus: "REWORK", note: "still broken" },
+    ]);
+
+    await request(app.getHttpServer())
+      .post(`/api/m3/tickets/${ticket.id}/start`)
+      .set("authorization", `Bearer ${token(Role.MAINTAINER, "worker")}`)
+      .expect(201);
+    await request(app.getHttpServer())
+      .post(`/api/m3/tickets/${ticket.id}/complete`)
+      .set("authorization", `Bearer ${token(Role.MAINTAINER, "worker")}`)
+      .expect(201);
+    await request(app.getHttpServer())
+      .post(`/api/m3/tickets/${ticket.id}/accept`)
+      .set("authorization", `Bearer ${token(Role.STUDENT)}`)
+      .send({ rating: 3 })
+      .expect(201);
+    expect(await prisma.repairTicket.findUniqueOrThrow({ where: { id: ticket.id } })).toMatchObject(
+      {
+        status: "ACCEPTED",
+        rating: 3,
+      },
+    );
+  });
+
+  it("rejects non-DONE tickets and invalid ratings or reasons", async () => {
+    const ticket = await prisma.repairTicket.create({
+      data: {
+        id: "accept-2",
+        roomId: "room-1",
+        reporterId: "user-student",
+        category: "LIGHT",
+        description: "new",
+        status: "REPORTED",
+      },
+    });
+    await request(app.getHttpServer())
+      .post(`/api/m3/tickets/${ticket.id}/accept`)
+      .set("authorization", `Bearer ${token(Role.STUDENT)}`)
+      .send({ rating: 5 })
+      .expect(409);
+    await request(app.getHttpServer())
+      .post(`/api/m3/tickets/${ticket.id}/reject`)
+      .set("authorization", `Bearer ${token(Role.STUDENT)}`)
+      .send({ reason: "no" })
+      .expect(409);
+
+    const done = await doneTicket("accept-3");
+    for (const rating of [0, 6, 2.5]) {
+      await request(app.getHttpServer())
+        .post(`/api/m3/tickets/${done.id}/accept`)
+        .set("authorization", `Bearer ${token(Role.STUDENT)}`)
+        .send({ rating })
+        .expect(400);
+    }
+    await request(app.getHttpServer())
+      .post(`/api/m3/tickets/${done.id}/reject`)
+      .set("authorization", `Bearer ${token(Role.STUDENT)}`)
+      .send({ reason: "  " })
+      .expect(400);
+  });
+});

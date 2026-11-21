@@ -29,6 +29,16 @@ export const DispatchTicketRequestSchema = z.object({
 });
 export type DispatchTicketRequest = z.infer<typeof DispatchTicketRequestSchema>;
 
+export const AcceptTicketRequestSchema = z.object({
+  rating: z.number().int().min(1).max(5),
+});
+export type AcceptTicketRequest = z.infer<typeof AcceptTicketRequestSchema>;
+
+export const RejectTicketRequestSchema = z.object({
+  reason: z.string().trim().min(1).max(500),
+});
+export type RejectTicketRequest = z.infer<typeof RejectTicketRequestSchema>;
+
 export const RepairTicketDtoSchema = z.object({
   id: z.string(),
   roomId: z.string(),
@@ -39,6 +49,7 @@ export const RepairTicketDtoSchema = z.object({
   photoRef: z.string().nullable(),
   status: TicketStatusSchema,
   priority: TicketPrioritySchema,
+  rating: z.number().int().min(1).max(5).nullable(),
   assigneeId: z.string().nullable(),
   slaDueAt: z.string().datetime().nullable(),
   createdAt: z.string().datetime(),

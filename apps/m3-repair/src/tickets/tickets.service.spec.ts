@@ -24,6 +24,8 @@ function setup() {
     report: vi.fn().mockResolvedValue(ticket),
     dispatch: vi.fn().mockResolvedValue(ticket),
     transition: vi.fn().mockResolvedValue(ticket),
+    accept: vi.fn().mockResolvedValue(ticket),
+    reject: vi.fn().mockResolvedValue(ticket),
     events: vi.fn().mockResolvedValue([]),
   };
   return {
@@ -117,6 +119,14 @@ describe("TicketsService", () => {
       ["ticket", "reporter", "IN_PROGRESS"],
       ["ticket", "reporter", "DONE"],
     ]);
+  });
+
+  it("passes the reporter, rating and rework reason to the repository", async () => {
+    const { service, tickets } = setup();
+    expect(await service.accept(user, "ticket", { rating: 4 })).toBe(ticket);
+    expect(await service.reject(user, "ticket", { reason: "still broken" })).toBe(ticket);
+    expect(tickets.accept.mock.calls).toEqual([["ticket", "reporter", 4]]);
+    expect(tickets.reject.mock.calls).toEqual([["ticket", "reporter", "still broken"]]);
   });
 
   it("grants admin history access while keeping the caller identity", async () => {

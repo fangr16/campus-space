@@ -1,6 +1,8 @@
 import {
+  type AcceptTicketRequest,
   type DispatchTicketRequest,
   type JwtPayload,
+  type RejectTicketRequest,
   type RepairTicketDto,
   type ReportTicketRequest,
   Role,
@@ -53,6 +55,14 @@ export class TicketsService {
     toStatus: "IN_PROGRESS" | "DONE",
   ): Promise<RepairTicketDto> {
     return this.tickets.transition(id, user.sub, toStatus);
+  }
+
+  accept(user: JwtPayload, id: string, input: AcceptTicketRequest): Promise<RepairTicketDto> {
+    return this.tickets.accept(id, user.sub, input.rating);
+  }
+
+  reject(user: JwtPayload, id: string, input: RejectTicketRequest): Promise<RepairTicketDto> {
+    return this.tickets.reject(id, user.sub, input.reason);
   }
 
   events(user: JwtPayload, id: string): Promise<TicketEventDto[]> {
