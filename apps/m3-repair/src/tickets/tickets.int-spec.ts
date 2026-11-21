@@ -1,13 +1,19 @@
 import { createServer, type Server } from "node:http";
 import type { AddressInfo } from "node:net";
-import { type JwtPayload, Role } from "@campus/contracts";
+import {
+  type JwtPayload,
+  Role,
+  type RoomBlockRequest,
+  type RoomReleaseRequest,
+} from "@campus/contracts";
 import type { INestApplication } from "@nestjs/common";
 import { JwtService } from "@nestjs/jwt";
 import { Test } from "@nestjs/testing";
 import request from "supertest";
-import { afterAll, beforeAll, describe, expect, it } from "vitest";
+import { afterAll, beforeAll, beforeEach, describe, expect, it, vi } from "vitest";
 import { createAppModule } from "../app.module";
 import { PrismaService } from "../prisma/prisma.service";
+import { SEAT_BLOCKER, type SeatBlocker } from "./seat-blocker";
 
 const options = { jwtSecret: "int-secret-0123456789", internalToken: "int-token", expiresIn: "1h" };
 const jwt = new JwtService({ secret: options.jwtSecret });
@@ -31,6 +37,16 @@ let upstream: Server;
 let prisma: PrismaService;
 let originalM1: string | undefined;
 let originalPlatform: string | undefined;
+const blocks: RoomBlockRequest[] = [];
+const releases: RoomReleaseRequest[] = [];
+const blocker: SeatBlocker = {
+  block: async (input) => {
+    blocks.push(input);
+  },
+  release: async (input) => {
+    releases.push(input);
+  },
+};
 
 beforeAll(async () => {
   upstream = createServer((req, res) => {
@@ -59,7 +75,10 @@ beforeAll(async () => {
   process.env.PLATFORM_BASE_URL = base;
   const moduleRef = await Test.createTestingModule({
     imports: [createAppModule(options)],
-  }).compile();
+  })
+    .overrideProvider(SEAT_BLOCKER)
+    .useValue(blocker)
+    .compile();
   app = moduleRef.createNestApplication();
   app.setGlobalPrefix("api/m3");
   await app.init();
@@ -73,6 +92,11 @@ afterAll(async () => {
   else process.env.M1_BASE_URL = originalM1;
   if (originalPlatform === undefined) delete process.env.PLATFORM_BASE_URL;
   else process.env.PLATFORM_BASE_URL = originalPlatform;
+});
+
+beforeEach(() => {
+  blocks.length = 0;
+  releases.length = 0;
 });
 
 describe("report and dispatch", () => {
@@ -499,5 +523,108 @@ describe("ticket list", () => {
       .set("authorization", `Bearer ${token(Role.ADMIN)}`)
       .expect(200);
     expect(admin.body.data.map((t: { id: string }) => t.id)).toContain("list-other");
+  });
+});
+
+describe("M3 to M1 write-back (REQ-X-01)", () => {
+  async function seeded(id: string, status: "DISPATCHED" | "DONE") {
+    return prisma.repairTicket.create({
+      data: {
+        id,
+        roomId: "room-1",
+        reporterId: "user-student",
+        category: "LIGHT",
+        description: "fault",
+        status,
+        assigneeId: "worker",
+      },
+    });
+  }
+
+  it("blocks the whole room when work starts, not at dispatch", async () => {
+    const created = await request(app.getHttpServer())
+      .post("/api/m3/tickets")
+      .set("authorization", `Bearer ${token(Role.STUDENT)}`)
+      .send({ roomId: "room-1", category: "LIGHT", description: "fault" })
+      .expect(201);
+    const id = created.body.data.id as string;
+    await request(app.getHttpServer())
+      .post(`/api/m3/tickets/${id}/dispatch`)
+      .set("authorization", `Bearer ${token(Role.ADMIN)}`)
+      .send({ assigneeId: "worker", priority: "NORMAL", slaDueAt: due })
+      .expect(201);
+    expect(blocks).toHaveLength(0);
+
+    await request(app.getHttpServer())
+      .post(`/api/m3/tickets/${id}/start`)
+      .set("authorization", `Bearer ${token(Role.MAINTAINER, "worker")}`)
+      .expect(201);
+    expect(blocks).toMatchObject([
+      {
+        roomId: "room-1",
+        source: "M3_REPAIR",
+        refId: id,
+        to: "2099-12-31T23:59:59.999Z",
+      },
+    ]);
+    expect(blocks[0]?.from).toEqual(expect.any(String));
+    expect(releases).toHaveLength(0);
+  });
+
+  it("keeps the block through DONE and releases only when the reporter accepts", async () => {
+    const ticket = await seeded("wb-1", "DISPATCHED");
+    await request(app.getHttpServer())
+      .post(`/api/m3/tickets/${ticket.id}/start`)
+      .set("authorization", `Bearer ${token(Role.MAINTAINER, "worker")}`)
+      .expect(201);
+    await request(app.getHttpServer())
+      .post(`/api/m3/tickets/${ticket.id}/complete`)
+      .set("authorization", `Bearer ${token(Role.MAINTAINER, "worker")}`)
+      .expect(201);
+    expect(blocks).toHaveLength(1);
+    expect(releases).toHaveLength(0);
+
+    await request(app.getHttpServer())
+      .post(`/api/m3/tickets/${ticket.id}/accept`)
+      .set("authorization", `Bearer ${token(Role.STUDENT)}`)
+      .send({ rating: 5 })
+      .expect(201);
+    expect(releases).toMatchObject([{ roomId: "room-1", source: "M3_REPAIR", refId: ticket.id }]);
+    expect(blocks).toHaveLength(1);
+  });
+
+  it("reclaims the same block when a reworked ticket resumes", async () => {
+    const ticket = await seeded("wb-2", "DONE");
+    await request(app.getHttpServer())
+      .post(`/api/m3/tickets/${ticket.id}/reject`)
+      .set("authorization", `Bearer ${token(Role.STUDENT)}`)
+      .send({ reason: "still broken" })
+      .expect(201);
+    expect(blocks).toHaveLength(0);
+
+    await request(app.getHttpServer())
+      .post(`/api/m3/tickets/${ticket.id}/start`)
+      .set("authorization", `Bearer ${token(Role.MAINTAINER, "worker")}`)
+      .expect(201);
+    expect(blocks).toMatchObject([{ source: "M3_REPAIR", refId: ticket.id }]);
+  });
+
+  it("rolls back the status transition when the write-back fails", async () => {
+    const ticket = await seeded("wb-3", "DISPATCHED");
+    const failing = vi.spyOn(blocker, "block").mockRejectedValueOnce(new Error("M1 down"));
+    try {
+      await request(app.getHttpServer())
+        .post(`/api/m3/tickets/${ticket.id}/start`)
+        .set("authorization", `Bearer ${token(Role.MAINTAINER, "worker")}`)
+        .expect(500);
+      expect(
+        await prisma.repairTicket.findUniqueOrThrow({ where: { id: ticket.id } }),
+      ).toMatchObject({
+        status: "DISPATCHED",
+      });
+      expect(await prisma.ticketEvent.count({ where: { ticketId: ticket.id } })).toBe(0);
+    } finally {
+      failing.mockRestore();
+    }
   });
 });
