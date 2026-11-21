@@ -449,3 +449,55 @@ describe("acceptance and rework", () => {
       .expect(400);
   });
 });
+
+describe("ticket list", () => {
+  it("shows only tickets the caller reported or is assigned to, admins see all", async () => {
+    await prisma.repairTicket.createMany({
+      data: [
+        {
+          id: "list-mine",
+          roomId: "room-1",
+          reporterId: "user-student",
+          category: "LIGHT",
+          description: "mine",
+        },
+        {
+          id: "list-assigned",
+          roomId: "room-1",
+          reporterId: "other-reporter",
+          assigneeId: "worker",
+          category: "LIGHT",
+          description: "assigned",
+        },
+        {
+          id: "list-other",
+          roomId: "room-1",
+          reporterId: "other-reporter",
+          category: "LIGHT",
+          description: "other",
+        },
+      ],
+    });
+
+    const mine = await request(app.getHttpServer())
+      .get("/api/m3/tickets")
+      .set("authorization", `Bearer ${token(Role.STUDENT)}`)
+      .expect(200);
+    expect(mine.body.data.map((t: { id: string }) => t.id)).toContain("list-mine");
+    expect(mine.body.data.map((t: { id: string }) => t.id)).not.toContain("list-other");
+    expect(mine.body.data.map((t: { id: string }) => t.id)).not.toContain("list-assigned");
+
+    const assigned = await request(app.getHttpServer())
+      .get("/api/m3/tickets")
+      .set("authorization", `Bearer ${token(Role.MAINTAINER, "worker")}`)
+      .expect(200);
+    expect(assigned.body.data.map((t: { id: string }) => t.id)).toContain("list-assigned");
+    expect(assigned.body.data.map((t: { id: string }) => t.id)).not.toContain("list-other");
+
+    const admin = await request(app.getHttpServer())
+      .get("/api/m3/tickets")
+      .set("authorization", `Bearer ${token(Role.ADMIN)}`)
+      .expect(200);
+    expect(admin.body.data.map((t: { id: string }) => t.id)).toContain("list-other");
+  });
+});

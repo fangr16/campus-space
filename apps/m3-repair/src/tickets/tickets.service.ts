@@ -57,6 +57,10 @@ export class TicketsService {
     return this.tickets.transition(id, user.sub, toStatus);
   }
 
+  list(user: JwtPayload): Promise<RepairTicketDto[]> {
+    return this.tickets.list(user.sub, user.roles.includes(Role.ADMIN));
+  }
+
   accept(user: JwtPayload, id: string, input: AcceptTicketRequest): Promise<RepairTicketDto> {
     return this.tickets.accept(id, user.sub, input.rating);
   }

@@ -51,6 +51,11 @@ export class TicketsController {
     return this.tickets.transition(user, id, "DONE");
   }
 
+  @Get()
+  list(@CurrentUser() user: JwtPayload): Promise<RepairTicketDto[]> {
+    return this.tickets.list(user);
+  }
+
   @Post(":id/accept")
   accept(
     @CurrentUser() user: JwtPayload,

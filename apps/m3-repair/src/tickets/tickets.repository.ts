@@ -141,6 +141,14 @@ export class TicketsRepository {
     });
   }
 
+  async list(userId: string, isAdmin: boolean): Promise<RepairTicketDto[]> {
+    const tickets = await this.prisma.repairTicket.findMany({
+      where: isAdmin ? undefined : { OR: [{ reporterId: userId }, { assigneeId: userId }] },
+      orderBy: { updatedAt: "desc" },
+    });
+    return tickets.map(toDto);
+  }
+
   async events(id: string, userId: string, isAdmin: boolean): Promise<TicketEventDto[]> {
     const ticket = await this.prisma.repairTicket.findUnique({
       where: { id },

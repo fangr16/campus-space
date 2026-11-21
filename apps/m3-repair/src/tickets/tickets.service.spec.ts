@@ -24,6 +24,7 @@ function setup() {
     report: vi.fn().mockResolvedValue(ticket),
     dispatch: vi.fn().mockResolvedValue(ticket),
     transition: vi.fn().mockResolvedValue(ticket),
+    list: vi.fn().mockResolvedValue([]),
     accept: vi.fn().mockResolvedValue(ticket),
     reject: vi.fn().mockResolvedValue(ticket),
     events: vi.fn().mockResolvedValue([]),
@@ -118,6 +119,16 @@ describe("TicketsService", () => {
     expect(tickets.transition.mock.calls).toEqual([
       ["ticket", "reporter", "IN_PROGRESS"],
       ["ticket", "reporter", "DONE"],
+    ]);
+  });
+
+  it("scopes the ticket list to the caller unless they are an admin", async () => {
+    const { service, tickets } = setup();
+    await service.list(user);
+    await service.list({ ...user, roles: ["admin"] });
+    expect(tickets.list.mock.calls).toEqual([
+      ["reporter", false],
+      ["reporter", true],
     ]);
   });
 
