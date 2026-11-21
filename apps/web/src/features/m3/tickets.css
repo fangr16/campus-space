@@ -1,0 +1,61 @@
+.tickets-layout {
+  display: grid;
+  gap: var(--space-6);
+  grid-template-columns: minmax(0, 1.6fr) minmax(280px, 1fr);
+  align-items: start;
+}
+
+.tickets-panel {
+  background: var(--color-surface);
+  border: 1px solid var(--color-line);
+  border-radius: var(--radius-md);
+  padding: var(--space-6);
+  margin-bottom: var(--space-6);
+}
+
+.tickets-panel__title {
+  font-size: var(--text-lg);
+  margin: 0 0 var(--space-4);
+}
+
+.tickets-detail {
+  display: grid;
+  grid-template-columns: 5rem 1fr;
+  gap: var(--space-2) var(--space-3);
+  margin: 0 0 var(--space-6);
+}
+
+.tickets-detail dt {
+  color: var(--color-ink-soft);
+}
+
+.tickets-detail dd {
+  margin: 0;
+}
+
+.tickets-actions {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-4);
+  margin-bottom: var(--space-6);
+}
+
+.tickets-timeline {
+  margin: 0;
+  padding-left: var(--space-6);
+}
+
+.tickets-timeline li {
+  margin-bottom: var(--space-2);
+}
+
+.tickets-timeline small {
+  color: var(--color-ink-soft);
+  margin-left: var(--space-2);
+}
+
+@media (max-width: 768px) {
+  .tickets-layout {
+    grid-template-columns: 1fr;
+  }
+}
