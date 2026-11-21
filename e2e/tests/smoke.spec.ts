@@ -70,7 +70,7 @@ test.describe("campus-space smoke", () => {
     }
   });
 
-  test("module placeholders state their requirements", async ({ page }) => {
+  test("M2 placeholder states requirements and M3 renders its workspace", async ({ page }) => {
     await login(page, STUDENT.username, STUDENT.password);
     const nav = page.getByRole("navigation", { name: "模块导航" });
     await nav.getByRole("link", { name: /整教室预约/ }).click();
@@ -78,7 +78,8 @@ test.describe("campus-space smoke", () => {
     await expect(page.getByText("REQ-M2-03")).toBeVisible();
     await nav.getByRole("link", { name: /报修工单/ }).click();
     await expect(page.getByRole("heading", { level: 1, name: "物业报修工单" })).toBeVisible();
-    await expect(page.getByText("REQ-X-01")).toBeVisible();
+    await expect(page.getByRole("heading", { level: 2, name: "故障上报" })).toBeVisible();
+    await expect(page.getByRole("heading", { level: 2, name: "我的工单" })).toBeVisible();
   });
 
   test("signing out returns to the login page and protects routes", async ({ page }) => {
