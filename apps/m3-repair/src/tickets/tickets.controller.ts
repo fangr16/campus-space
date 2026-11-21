@@ -1,8 +1,12 @@
 import { CurrentUser, Roles } from "@campus/auth";
 import {
+  type AcceptTicketRequest,
+  AcceptTicketRequestSchema,
   type DispatchTicketRequest,
   DispatchTicketRequestSchema,
   type JwtPayload,
+  type RejectTicketRequest,
+  RejectTicketRequestSchema,
   type RepairTicketDto,
   type ReportTicketRequest,
   ReportTicketRequestSchema,
@@ -45,6 +49,29 @@ export class TicketsController {
   @Post(":id/complete")
   complete(@CurrentUser() user: JwtPayload, @Param("id") id: string): Promise<RepairTicketDto> {
     return this.tickets.transition(user, id, "DONE");
+  }
+
+  @Get()
+  list(@CurrentUser() user: JwtPayload): Promise<RepairTicketDto[]> {
+    return this.tickets.list(user);
+  }
+
+  @Post(":id/accept")
+  accept(
+    @CurrentUser() user: JwtPayload,
+    @Param("id") id: string,
+    @Body(new ZodValidationPipe(AcceptTicketRequestSchema)) body: AcceptTicketRequest,
+  ): Promise<RepairTicketDto> {
+    return this.tickets.accept(user, id, body);
+  }
+
+  @Post(":id/reject")
+  reject(
+    @CurrentUser() user: JwtPayload,
+    @Param("id") id: string,
+    @Body(new ZodValidationPipe(RejectTicketRequestSchema)) body: RejectTicketRequest,
+  ): Promise<RepairTicketDto> {
+    return this.tickets.reject(user, id, body);
   }
 
   @Get(":id/events")

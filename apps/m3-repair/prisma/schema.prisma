@@ -43,6 +43,8 @@ model RepairTicket {
   status      TicketStatus   @default(REPORTED)
   priority    TicketPriority @default(NORMAL)
   assigneeId  String?
+  /// 1-5 score recorded when the reporter accepts a completed ticket (REQ-M3-05).
+  rating      Int?
   /// Deadline for the current stage; passing it triggers escalation (REQ-M3-04).
   slaDueAt    DateTime?
   /// Set once when an overdue REWORK ticket has been reminded; REWORK never escalates.

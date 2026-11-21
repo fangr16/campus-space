@@ -81,6 +81,74 @@ export class TicketsRepository {
     });
   }
 
+  async accept(id: string, reporterId: string, rating: number): Promise<RepairTicketDto> {
+    return this.prisma.$transaction(async (tx) => {
+      const current = await tx.repairTicket.findUnique({ where: { id } });
+      if (!current) throw new NotFoundException("ticket not found");
+      if (current.reporterId !== reporterId) {
+        throw new ForbiddenException("only the reporter can accept a ticket");
+      }
+      try {
+        assertTransition(current.status, "ACCEPTED");
+      } catch {
+        throw new ConflictException("ticket cannot be accepted from this status");
+      }
+      const updated = await tx.repairTicket.updateMany({
+        where: { id, status: current.status, reporterId },
+        data: { status: "ACCEPTED", rating },
+      });
+      if (updated.count !== 1) throw new ConflictException("ticket changed concurrently");
+      await tx.ticketEvent.create({
+        data: {
+          ticketId: id,
+          fromStatus: current.status,
+          toStatus: "ACCEPTED",
+          actorId: reporterId,
+          note: `评分：${rating}`,
+        },
+      });
+      return toDto(await tx.repairTicket.findUniqueOrThrow({ where: { id } }));
+    });
+  }
+
+  async reject(id: string, reporterId: string, reason: string): Promise<RepairTicketDto> {
+    return this.prisma.$transaction(async (tx) => {
+      const current = await tx.repairTicket.findUnique({ where: { id } });
+      if (!current) throw new NotFoundException("ticket not found");
+      if (current.reporterId !== reporterId) {
+        throw new ForbiddenException("only the reporter can reject a ticket");
+      }
+      try {
+        assertTransition(current.status, "REWORK");
+      } catch {
+        throw new ConflictException("ticket cannot be rejected from this status");
+      }
+      const updated = await tx.repairTicket.updateMany({
+        where: { id, status: current.status, reporterId },
+        data: { status: "REWORK" },
+      });
+      if (updated.count !== 1) throw new ConflictException("ticket changed concurrently");
+      await tx.ticketEvent.create({
+        data: {
+          ticketId: id,
+          fromStatus: current.status,
+          toStatus: "REWORK",
+          actorId: reporterId,
+          note: reason,
+        },
+      });
+      return toDto(await tx.repairTicket.findUniqueOrThrow({ where: { id } }));
+    });
+  }
+
+  async list(userId: string, isAdmin: boolean): Promise<RepairTicketDto[]> {
+    const tickets = await this.prisma.repairTicket.findMany({
+      where: isAdmin ? undefined : { OR: [{ reporterId: userId }, { assigneeId: userId }] },
+      orderBy: { updatedAt: "desc" },
+    });
+    return tickets.map(toDto);
+  }
+
   async events(id: string, userId: string, isAdmin: boolean): Promise<TicketEventDto[]> {
     const ticket = await this.prisma.repairTicket.findUnique({
       where: { id },
@@ -108,6 +176,7 @@ function toDto(ticket: {
   photoRef: string | null;
   status: RepairTicketDto["status"];
   priority: RepairTicketDto["priority"];
+  rating: number | null;
   assigneeId: string | null;
   slaDueAt: Date | null;
   createdAt: Date;
