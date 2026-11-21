@@ -1,5 +1,15 @@
-import type { RepairTicketDto, ReportTicketRequest, TicketPriority } from "@campus/contracts";
-import { ConflictException, Injectable, NotFoundException } from "@nestjs/common";
+import type {
+  RepairTicketDto,
+  ReportTicketRequest,
+  TicketEventDto,
+  TicketPriority,
+} from "@campus/contracts";
+import {
+  ConflictException,
+  ForbiddenException,
+  Injectable,
+  NotFoundException,
+} from "@nestjs/common";
 import { PrismaService } from "../prisma/prisma.service";
 import { assertTransition } from "./ticket-status";
 
@@ -43,6 +53,48 @@ export class TicketsRepository {
       });
       return toDto(await tx.repairTicket.findUniqueOrThrow({ where: { id } }));
     });
+  }
+
+  async transition(
+    id: string,
+    actorId: string,
+    toStatus: "IN_PROGRESS" | "DONE",
+  ): Promise<RepairTicketDto> {
+    return this.prisma.$transaction(async (tx) => {
+      const current = await tx.repairTicket.findUnique({ where: { id } });
+      if (!current) throw new NotFoundException("ticket not found");
+      if (current.assigneeId !== actorId) throw new ForbiddenException("not assigned to ticket");
+      try {
+        assertTransition(current.status, toStatus);
+      } catch {
+        throw new ConflictException("ticket cannot move to this status");
+      }
+      const updated = await tx.repairTicket.updateMany({
+        where: { id, status: current.status, assigneeId: actorId },
+        data: { status: toStatus },
+      });
+      if (updated.count !== 1) throw new ConflictException("ticket changed concurrently");
+      await tx.ticketEvent.create({
+        data: { ticketId: id, fromStatus: current.status, toStatus, actorId },
+      });
+      return toDto(await tx.repairTicket.findUniqueOrThrow({ where: { id } }));
+    });
+  }
+
+  async events(id: string, userId: string, isAdmin: boolean): Promise<TicketEventDto[]> {
+    const ticket = await this.prisma.repairTicket.findUnique({
+      where: { id },
+      select: { reporterId: true, assigneeId: true },
+    });
+    if (!ticket) throw new NotFoundException("ticket not found");
+    if (!isAdmin && userId !== ticket.reporterId && userId !== ticket.assigneeId) {
+      throw new ForbiddenException("ticket history is private");
+    }
+    const events = await this.prisma.ticketEvent.findMany({
+      where: { ticketId: id },
+      orderBy: [{ createdAt: "asc" }, { id: "asc" }],
+    });
+    return events.map((event) => ({ ...event, createdAt: event.createdAt.toISOString() }));
   }
 }
 

@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { DispatchTicketRequestSchema, ReportTicketRequestSchema } from "./m3";
+import { DispatchTicketRequestSchema, ReportTicketRequestSchema, TicketEventDtoSchema } from "./m3";
 
 describe("M3 request contracts", () => {
   it("accepts a report without a seat or photo and trims its text", () => {
@@ -30,5 +30,22 @@ describe("M3 request contracts", () => {
         slaDueAt: "tomorrow",
       }).success,
     ).toBe(false);
+  });
+
+  it("parses an event history entry with a UTC timestamp", () => {
+    const event = {
+      id: "event-1",
+      ticketId: "ticket-1",
+      fromStatus: "DISPATCHED",
+      toStatus: "IN_PROGRESS",
+      actorId: "worker",
+      note: null,
+      createdAt: "2030-01-01T00:00:00.000Z",
+    };
+    expect(TicketEventDtoSchema.parse(event)).toEqual(event);
+    expect(TicketEventDtoSchema.safeParse({ ...event, toStatus: "UNKNOWN" }).success).toBe(false);
+    expect(TicketEventDtoSchema.safeParse({ ...event, createdAt: "yesterday" }).success).toBe(
+      false,
+    );
   });
 });

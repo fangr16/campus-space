@@ -45,3 +45,14 @@ export const RepairTicketDtoSchema = z.object({
   updatedAt: z.string().datetime(),
 });
 export type RepairTicketDto = z.infer<typeof RepairTicketDtoSchema>;
+
+export const TicketEventDtoSchema = z.object({
+  id: z.string(),
+  ticketId: z.string(),
+  fromStatus: TicketStatusSchema.nullable(),
+  toStatus: TicketStatusSchema,
+  actorId: z.string(),
+  note: z.string().nullable(),
+  createdAt: z.string().datetime(),
+});
+export type TicketEventDto = z.infer<typeof TicketEventDtoSchema>;

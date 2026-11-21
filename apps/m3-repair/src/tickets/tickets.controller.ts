@@ -7,9 +7,10 @@ import {
   type ReportTicketRequest,
   ReportTicketRequestSchema,
   Role,
+  type TicketEventDto,
 } from "@campus/contracts";
 import { ZodValidationPipe } from "@campus/nest-common";
-import { Body, Controller, Param, Post } from "@nestjs/common";
+import { Body, Controller, Get, Param, Post } from "@nestjs/common";
 import { TicketsService } from "./tickets.service";
 
 @Controller("tickets")
@@ -32,5 +33,22 @@ export class TicketsController {
     @Body(new ZodValidationPipe(DispatchTicketRequestSchema)) body: DispatchTicketRequest,
   ): Promise<RepairTicketDto> {
     return this.tickets.dispatch(user, id, body);
+  }
+
+  @Roles(Role.MAINTAINER)
+  @Post(":id/start")
+  start(@CurrentUser() user: JwtPayload, @Param("id") id: string): Promise<RepairTicketDto> {
+    return this.tickets.transition(user, id, "IN_PROGRESS");
+  }
+
+  @Roles(Role.MAINTAINER)
+  @Post(":id/complete")
+  complete(@CurrentUser() user: JwtPayload, @Param("id") id: string): Promise<RepairTicketDto> {
+    return this.tickets.transition(user, id, "DONE");
+  }
+
+  @Get(":id/events")
+  events(@CurrentUser() user: JwtPayload, @Param("id") id: string): Promise<TicketEventDto[]> {
+    return this.tickets.events(user, id);
   }
 }
