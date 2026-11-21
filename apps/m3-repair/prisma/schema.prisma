@@ -47,6 +47,8 @@ model RepairTicket {
   rating      Int?
   /// Deadline for the current stage; passing it triggers escalation (REQ-M3-04).
   slaDueAt    DateTime?
+  /// Set once when an overdue REWORK ticket has been reminded; REWORK never escalates.
+  reworkRemindedAt DateTime?
   createdAt   DateTime       @default(now())
   updatedAt   DateTime       @updatedAt
   events      TicketEvent[]
